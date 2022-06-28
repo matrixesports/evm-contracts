@@ -1,0 +1,13 @@
+{
+    "solidity.packageDefaultDependenciesContractsDirectory": "src",
+    "solidity.packageDefaultDependenciesDirectory": "lib",
+    "solidity.compileUsingRemoteVersion": "v0.8.13",
+    "search.exclude": { "lib": true },
+    "files.associations": {
+        ".gas-snapshot": "julia"
+    },
+    "solidity.formatter": "prettier",
+    "[solidity]": {
+        "editor.defaultFormatter": "JuanBlanco.solidity"
+    }
+}

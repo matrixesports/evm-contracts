@@ -1,0 +1,19 @@
+{
+  "name": "evm-contracts",
+  "version": "1.0.0",
+  "description": "evm contracts used in the matrix ecosystem",
+  "main": "index.ts",
+  "repository": "git@github.com:matrixesports/evm-contracts.git",
+  "author": "rayquaza <sarhaangulati737@gmail.com>",
+  "files": [
+    "src/**/*.sol"
+  ],
+  "dependencies": {
+    "prettier": "^2.7.1",
+    "prettier-plugin-solidity": "^1.0.0-beta.19"
+  },
+  "scripts": {
+    "all": "foundryup && forge update && yarn install",
+    "lint": "prettier --write src/**/*.sol && prettier --write src/*.sol"
+  }
+}

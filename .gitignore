@@ -1,2 +1,19 @@
-cache/
-out/
+
+# Node.js
+/node_modules/
+
+# Solidity
+/out/
+/cache/
+flattened.sol
+
+# ============================================================================ #
+# Application
+# ============================================================================ #
+
+# Environment
+.env
+.slitherenv/
+artifacts_hardhat
+cache_hardhat
+broadcast/
