@@ -19,7 +19,7 @@
 - submodules:
   - solmate, forge-std works fine with forge update
   - need to keep an eye on oz, master branch is dev branch, works on release branches, current version installed is v4.6.0. https://github.com/foundry-rs/foundry/issues/401
-  - same for chainlink, current version installed is v1.4.1
+  - same for chainlink, current version installed is v1.5.1
 - erc20 token takes decimals into account, so to give nice whole numbers account for that
 
 ## Development
