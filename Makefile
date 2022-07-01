@@ -1,5 +1,6 @@
 -include .env
 
+all:;install 
 # Clean the repo
 clean  :; forge clean
 

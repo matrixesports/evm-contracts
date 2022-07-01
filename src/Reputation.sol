@@ -12,7 +12,7 @@ contract Creator is MERC20 {
     mapping(address => uint256) public delegatedTotal;
 
     error InsufficientBalance(address delegator, uint256 owned, uint256 delegatedAmount);
-    event TokensDelegated)()
+    event TokensDelegated();
 
     constructor(
         string memory name,
