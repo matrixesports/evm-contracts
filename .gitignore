@@ -7,13 +7,12 @@
 /cache/
 flattened.sol
 
-# ============================================================================ #
-# Application
-# ============================================================================ #
-
 # Environment
 .env
 .slitherenv/
 artifacts_hardhat
 cache_hardhat
 broadcast/
+TODO
+
+MTXToken.sol

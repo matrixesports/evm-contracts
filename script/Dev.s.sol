@@ -6,6 +6,10 @@ import "../src/Pass.sol";
 import "../src/Recipe.sol";
 import "../src/rewards/Redeemable.sol";
 
+struct Asset {
+    address owner;
+}
+
 /**
 do dev stuff
 run:
@@ -14,12 +18,21 @@ forge script script/Dev.s.sol:DevScript --rpc-url $POLYGON_RPC --private-key $PV
  */
 
 contract DevScript is Script {
-    LevelInfo[] levels;
-    uint256 creator_id = 0;
-    Pass pass;
+    // LevelInfo[] levels;
+    // uint256 creator_id = 0;
+    // Pass pass;
 
     function run() public {
-        console.logBytes32(bytes32(uint256(1)));
+        // function getHash(uint256 _x, uint256 _y) public pure returns (bytes32) {
+        uint256 x = 1;
+        uint256 y = 2;
+        console.logBytes32(keccak256(abi.encodePacked(x, y)));
+        x = 2;
+        y = 2;
+        console.logBytes32(keccak256(abi.encodePacked(x, y)));
+        x = 2;
+        y = 1;
+        console.logBytes32(keccak256(abi.encodePacked(x, y)));
 
         // vm.startBroadcast();
         // pass = Pass(0x64dA27372168b38ab1bbFb566Cc5267316337582);
@@ -70,5 +83,13 @@ contract DevScript is Script {
 
         // uint256 seasonId = pass.newSeason(10, levels);
         // // =MERC1155(0x2f7Bcde61c87b255a26E9db906b765E68Ea93FB2)
+    }
+}
+
+contract Hello {
+    function hello() public returns (Asset[] memory) {
+        Asset[] memory assets = new Asset[](2);
+        assets[1].owner = address(this);
+        return assets;
     }
 }
