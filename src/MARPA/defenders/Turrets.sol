@@ -2,6 +2,7 @@
 pragma solidity >=0.8.0;
 
 import "../../rewards/MERC1155.sol";
+import "../interfaces/IBoard.sol";
 
 /**
 @notice a turret defense asset
@@ -15,6 +16,8 @@ contract Turret is MERC1155 {
     uint256 public health = 5;
     uint256 public damage = 1;
     address public board;
+
+    //defends every tick
 
     constructor(
         string memory uri,
