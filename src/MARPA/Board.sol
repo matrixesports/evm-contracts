@@ -42,7 +42,10 @@ contract Board {
     //and since x,y will always point to a unique spot we good
     mapping(bytes32 => Asset) public assets;
 
+    event AssetHit(uint256 indexed x, uint256 indexed y);
     event AssetDead(uint256 indexed x, uint256 indexed y);
+    event AssetPlaced(uint256 indexed x, uint256 indexed y);
+    event AssetUnplaced(uint256 indexed x, uint256 indexed y);
 
     modifier onlyOwner() {
         require(msg.sender == owner, "no");
@@ -146,15 +149,47 @@ contract Board {
     ) public gameStarted whitelisted {
         if (_newHealth == 0) emit AssetDead(_x, _y);
         assets[getHash(_x, _y)].health = _newHealth;
+        emit AssetHit(_x, _y);
     }
 
     /*//////////////////////////////////////////////////////////////////////
                                 PLACE/UNPLACE
     //////////////////////////////////////////////////////////////////////*/
 
-    function place() public gameNotStarted whitelisted {}
+    //dont allow to put defence around boundary since thats where attacks will be placed
+    //dont allow to put attack anywhere except boundary
+    //make sure its within boundary
+    //if offensive true then check attacker conditions
+    function checkPlacementCondition(
+        uint256 _x,
+        uint256 _y,
+        bool offensive
+    ) public view {
+        //if health 0 then nothing placed
+        uint256 placedAssetHealth = assets[getHash(_x, _y)].health;
+        require(placedAssetHealth == 0, "no");
+        if (offensive) {
+            require(_x == 0 || _y == 0 || _x == x || _y == y, "no");
+        } else {
+            require(_x != 0 && _y != 0 && _x < x && _y < y, "no");
+        }
+    }
 
-    function unplace() public gameNotStarted whitelisted {}
+    function place(
+        uint256 _x,
+        uint256 _y,
+        Asset memory _asset
+    ) public gameNotStarted whitelisted {
+        checkPlacementCondition(_x, _y, _asset.offensive);
+        assets[getHash(_x, _y)] = _asset;
+        emit AssetPlaced(_x, _y);
+    }
+
+    //remove from assets
+    function unplace(uint256 _x, uint256 _y) public gameNotStarted whitelisted {
+        delete assets[getHash(_x, _y)];
+        emit AssetUnplaced(_x, _y);
+    }
 
     // //x->y->asset placed or not
     // mapping(uint256 => mapping(uint256 => bool)) public occupied;
@@ -189,25 +224,6 @@ contract Board {
     //                             PLACEMENT
     // //////////////////////////////////////////////////////////////////////*/
 
-    // //dont allow to put defence around boundary since thats where attacks will be placed
-    // //dont allow to put attack anywhere except boundary
-    // //make sure its within boundary
-    // //id 0 reserved for castle, nobody gets it
-    // //id 1-10 reserved for defensive assets
-    // //id 11-20 for attacking assets
-    // function checkPlacementCondition(
-    //     uint256 _x,
-    //     uint256 _y,
-    //     uint256 id
-    // ) public view {
-    //     require(!occupied[_x][_y], "no");
-    //     if (id <= 10) {
-    //         require(_x != 0 && _y != 0 && _x < x && _y < y, "no");
-    //     } else {
-    //         require(_x == 0 || _y == 0 || _x == x || _y == y, "no");
-    //     }
-    // }
-
     // function place(
     //     uint256 _x,
     //     uint256 _y,
@@ -231,62 +247,5 @@ contract Board {
     //     }
     //     occupied[_x][_y] = false;
     //     delete placedAsset[_x][_y];
-    // }
-
-    // function runEngine() public onlyRole(DEFAULT_ADMIN_ROLE) gameStarted {
-    //     for (uint256 _x; _x <= x; _x++) {
-    //         for (uint256 _y; _y <= y; _y++) {
-    //             //castle cant do anything
-    //             uint256 id = placedAsset[_x][_y].id;
-    //             if (id == 0) {
-    //                 continue;
-    //             } else if (id <= 10) {
-    //                 defendInRange(_x, _y, id);
-    //             } else {
-    //                 attackInRange(_x, _y, id);
-    //             }
-    //         }
-    //     }
-    // }
-
-    // //defense units dont need to calculate range everytime
-    // function defendInRange(
-    //     uint256 _x,
-    //     uint256 _y,
-    //     uint256 id
-    // ) private {
-    //     Asset memory _asset = asset[id];
-    //     uint256 x_range = _asset.range + _x;
-    //     uint256 y_range = _asset.range + _y;
-    //     if (x_range > x) x_range = x;
-    //     if (x_range > y) y_range = y;
-    //     // for (uint x_idx;x_idx<=+)
-    // }
-
-    // function attackInRange(
-    //     uint256 _x,
-    //     uint256 _y,
-    //     uint256 id
-    // ) private {}
-
-    // //run every other block
-    // function updatePositions() public onlyRole(DEFAULT_ADMIN_ROLE) gameStarted {}
-
-    // /*//////////////////////////////////////////////////////////////////////
-    //                             ADMIN CONTROLS
-    // //////////////////////////////////////////////////////////////////////*/
-
-    // function toggleGame(bool _toggle) public onlyRole(DEFAULT_ADMIN_ROLE) {
-    //     started = _toggle;
-    // }
-
-    // modifier gameStarted() {
-    //     require(started == true, "no");
-    //     _;
-    // }
-
-    // modifier gameStopped() {
-    //     require(started == false, "no");
-    //     _;
     // }
 }
