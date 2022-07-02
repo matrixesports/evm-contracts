@@ -42,6 +42,8 @@ contract Board {
     //and since x,y will always point to a unique spot we good
     mapping(bytes32 => Asset) public assets;
 
+    event AssetDead(uint256 indexed x, uint256 indexed y);
+
     modifier onlyOwner() {
         require(msg.sender == owner, "no");
         _;
@@ -86,10 +88,10 @@ contract Board {
                                 READ BOARD
     //////////////////////////////////////////////////////////////////////*/
 
-    //find units in range of _x,_y
+    //find unit in range of _x,_y
     //OOHHH only need to find one; return first one
     //if offensive == true find attackers with non zero health, else defenders
-    //return: array of x,y,health of unit found
+    //return: x,y,health of unit found
     function find(
         uint256 _x,
         uint256 _y,
@@ -99,9 +101,9 @@ contract Board {
         public
         view
         returns (
-            uint256[] memory _xRange,
-            uint256[] memory _yRange,
-            uint256[] memory _health
+            uint256,
+            uint256,
+            uint256
         )
     {
         uint256 x_range = _x + range;
@@ -109,24 +111,41 @@ contract Board {
         uint256 y_range = _y + range;
         if (y_range > y) y_range = y;
 
-        //can have atmost x_range * y_range elements
-        _xRange = new uint256[](x_range * y_range);
-        _yRange = new uint256[](x_range * y_range);
-        _health = new uint256[](x_range * y_range);
-
         //[a,b]
         for (uint256 a = _x; a <= x_range; a++) {
             for (uint256 b = _y; b <= y_range; b++) {
                 Asset memory _asset = assets[getHash(a, b)];
+                //nothing or dead
                 if (_asset.health == 0) continue;
                 //look for defenders
                 if (offensive) {
                     //just another attacker there
                     if (_asset.offensive) continue;
-                    // _xRange.push(a);
+                    return (a, b, _asset.health);
+                } else {
+                    //look for attackers
+                    if (_asset.offensive) {
+                        return (a, b, _asset.health);
+                    }
                 }
             }
         }
+        //if nothing found
+        return (0, 0, 0);
+    }
+
+    /*//////////////////////////////////////////////////////////////////////
+                                UPDATE BOARD
+    //////////////////////////////////////////////////////////////////////*/
+
+    //update health
+    function update(
+        uint256 _x,
+        uint256 _y,
+        uint256 _newHealth
+    ) public gameStarted whitelisted {
+        if (_newHealth == 0) emit AssetDead(_x, _y);
+        assets[getHash(_x, _y)].health = _newHealth;
     }
 
     /*//////////////////////////////////////////////////////////////////////
