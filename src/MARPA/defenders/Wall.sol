@@ -12,10 +12,8 @@ import "../interfaces/IDefender.sol";
 - id in contract must be equal to the creator_id
  */
 
-contract Turret is MERC1155, IDefender {
-    uint256 public range = 2;
-    uint256 public health = 5;
-    uint256 public damage = 1;
+contract Wall is MERC1155, IDefender {
+    uint256 public health = 10;
     address public _board;
     IBoard private board = IBoard(_board);
 
@@ -36,16 +34,8 @@ contract Turret is MERC1155, IDefender {
     //read and call maybe?
     //loop over all stuff on board
     //maybe bot looks up all and their health and only calls ones that have health?
-    function defend(uint256 _x, uint256 _y) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        (uint256 attack_x, uint256 attack_y, uint256 _attackerHealth) = board.find(_x, _y, range, false);
-        //check for underflow
-        if (_attackerHealth >= damage) {
-            _attackerHealth -= damage;
-        } else {
-            health = 0;
-        }
-        board.update(attack_x, attack_y, _attackerHealth);
-    }
+    //function defend(uint256 _x, uint256 _y) public onlyRole(DEFAULT_ADMIN_ROLE) {
+    //}
 
     //check if owner that they tryna place, if yea then call place in board, burn it too
     function place(
