@@ -87,6 +87,10 @@ contract Board {
         return keccak256(abi.encodePacked(_x, _y));
     }
 
+    function getAsset(uint256 _x, uint256 _y) public view returns (Asset memory) {
+        return assets[getHash(_x, _y)];
+    }
+
     /*//////////////////////////////////////////////////////////////////////
                                 READ BOARD
     //////////////////////////////////////////////////////////////////////*/
@@ -117,7 +121,7 @@ contract Board {
         //[a,b]
         for (uint256 a = _x; a <= x_range; a++) {
             for (uint256 b = _y; b <= y_range; b++) {
-                Asset memory _asset = assets[getHash(a, b)];
+                Asset memory _asset = getAsset(_x, _y);
                 //nothing or dead
                 if (_asset.health == 0) continue;
                 //look for defenders
@@ -148,7 +152,8 @@ contract Board {
         uint256 _newHealth
     ) public gameStarted whitelisted {
         if (_newHealth == 0) emit AssetDead(_x, _y);
-        assets[getHash(_x, _y)].health = _newHealth;
+        Asset memory _asset = getAsset(_x, _y);
+        _asset.health = _newHealth;
         emit AssetHit(_x, _y);
     }
 
@@ -166,8 +171,8 @@ contract Board {
         bool offensive
     ) public view {
         //if health 0 then nothing placed
-        uint256 placedAssetHealth = assets[getHash(_x, _y)].health;
-        require(placedAssetHealth == 0, "no");
+        Asset memory _asset = getAsset(_x, _y);
+        require(_asset.health == 0, "no");
         if (offensive) {
             require(_x == 0 || _y == 0 || _x == x || _y == y, "no");
         } else {
@@ -178,10 +183,14 @@ contract Board {
     function place(
         uint256 _x,
         uint256 _y,
-        Asset memory _asset
+        bool offensive,
+        address _owner,
+        address assetContract,
+        uint256 health,
+        uint256 assetId
     ) public gameNotStarted whitelisted {
-        checkPlacementCondition(_x, _y, _asset.offensive);
-        assets[getHash(_x, _y)] = _asset;
+        checkPlacementCondition(_x, _y, offensive);
+        assets[getHash(_x, _y)] = Asset(offensive, _owner, assetContract, health, assetId);
         emit AssetPlaced(_x, _y);
     }
 
