@@ -6,22 +6,23 @@ import "../interfaces/IBoard.sol";
 import "../interfaces/IDefender.sol";
 
 /**
-@notice a bomber defense asset
+@notice a explosive defense asset
 @dev 
-- user is rewarded a bomber by a lootbox
+- user is rewarded a explosive by a lootbox
 - id in contract must be equal to the creator_id
  */
 
-contract Bomber is MERC1155, IDefender {
-    uint256 public range = 2;
-    uint256 public health = 4;
-    uint256 public damage = 3;
-    //once every 3 ticks
-    uint256 firingRate = 3;
-    //count number of times called for firing rate
+contract Melee is MERC1155, IDefender {
+    //move 1 unit 2 tick
+    uint256 public moveTick = 2;
+    uint256 public range = 1;
+    uint256 public health = 10;
+    uint256 public damage = 2;
     uint256 count;
     address public _board;
     IBoard private board = IBoard(_board);
+
+    //defends every tick
 
     constructor(
         string memory uri,
@@ -34,26 +35,21 @@ contract Bomber is MERC1155, IDefender {
         board = IBoard(_board);
     }
 
-    //splash damage
+    //find unit in range, damage it, send it back, i wish we could use delegate call here
+    //read and call maybe?
+    // loop over all stuff on board
+    //maybe bot looks up all and their health and only calls ones that have health?
     function defend(uint256 _x, uint256 _y) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        if (!board.isGeneratorAround(_x, _y)) return;
         if (count % firingRate != 0) return;
-        count++;
-        (uint256[] memory attack_x, uint256[] memory attack_y, uint256[] memory _attackerHealth) = board.findAll(
-            _x,
-            _y,
-            range,
-            false
-        );
-        for (uint256 z; z < attack_x.length; z++) {
-            //check for underflow
-            if (_attackerHealth[z] >= damage) {
-                _attackerHealth[z] -= damage;
-            } else {
-                health = 0;
-            }
-            board.update(attack_x[z], attack_y[z], _attackerHealth[z]);
+        (uint256 attack_x, uint256 attack_y, uint256 _attackerHealth) = board.find(_x, _y, range, false);
+        //check for underflow
+        if (_attackerHealth >= damage) {
+            _attackerHealth -= damage;
+        } else {
+            health = 0;
         }
+        board.update(attack_x, attack_y, _attackerHealth);
+        board.update(_x, _y, 0);
     }
 
     //check if owner that they tryna place, if yea then call place in board, burn it too

@@ -1,6 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
+//need to know for each grid item
+//what is there
+//who put it there
+//
+
 struct Asset {
     //true if attacker asset, false otherwise
     bool offensive;
@@ -101,6 +106,12 @@ contract Board {
     /*//////////////////////////////////////////////////////////////////////
                             BEFORE AND AFTER
     //////////////////////////////////////////////////////////////////////*/
+
+    //call from bot
+    function updateAttackers() public gameStarted whitelisted {}
+
+    //check if castl health more than 0 or attackers alive
+    function continueGame() public gameStarted whitelisted {}
 
     /*//////////////////////////////////////////////////////////////////////
                                 READ BOARD
