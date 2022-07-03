@@ -37,15 +37,14 @@ contract Turret is MERC1155, IDefender {
     //loop over all stuff on board
     //maybe bot looks up all and their health and only calls ones that have health?
     function defend(uint256 _x, uint256 _y) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        (uint256 attack_x, uint256 attack_y, uint256 _health) = board.find(_x, _y, range, false);
+        (uint256 attack_x, uint256 attack_y, uint256 _attackerHealth) = board.find(_x, _y, range, false);
         //check for underflow
-        if (health >= damage) {
-            _health -= damage;
+        if (_attackerHealth >= damage) {
+            _attackerHealth -= damage;
         } else {
             health = 0;
         }
-
-        board.update(attack_x, attack_y, _health);
+        board.update(attack_x, attack_y, _attackerHealth);
     }
 
     //check if owner that they tryna place, if yea then call place in board, burn it too

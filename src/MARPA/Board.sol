@@ -141,6 +141,49 @@ contract Board {
         return (0, 0, 0);
     }
 
+    //find all in range, needed for splash damage
+    function findAll(
+        uint256 _x,
+        uint256 _y,
+        uint256 range,
+        bool offensive
+    )
+        public
+        view
+        returns (
+            uint256[] memory allX,
+            uint256[] memory allY,
+            uint256[] memory allHealth
+        )
+    {
+        uint256 x_range = _x + range;
+        if (x_range > x) x_range = x;
+        uint256 y_range = _y + range;
+        if (y_range > y) y_range = y;
+
+        //[a,b]
+        for (uint256 a = _x; a <= x_range; a++) {
+            for (uint256 b = _y; b <= y_range; b++) {
+                Asset memory _asset = getAsset(_x, _y);
+                //nothing or dead
+                if (_asset.health == 0) continue;
+                //look for defenders
+                if (offensive) {
+                    //just another attacker there
+                    if (_asset.offensive) continue;
+                    return (a, b, _asset.health);
+                } else {
+                    //look for attackers
+                    if (_asset.offensive) {
+                        return (a, b, _asset.health);
+                    }
+                }
+            }
+        }
+        //if nothing found
+        return (0, 0, 0);
+    }
+
     /*//////////////////////////////////////////////////////////////////////
                                 UPDATE BOARD
     //////////////////////////////////////////////////////////////////////*/
