@@ -1,293 +1,360 @@
-// // SPDX-License-Identifier: MIT
-// pragma solidity >=0.8.0;
+// SPDX-License-Identifier: MIT
+pragma solidity >=0.8.0;
 
-// import "../rewards/MERC1155.sol";
+import "./Assets.sol";
+import "../rewards/MERC1155.sol";
 
-// struct Asset {
-//     //true if attacker asset
-//     bool isAttacker;
-//     //user owns it in the asset contract
-//     address owner;
-//     //current health of asset
-//     uint256 health;
-//     //id in the asset contract
-//     uint256 id;
-// }
+/// @notice
+/// @author rayquaza7
+contract Board is MERC1155 {
+    /// @dev thrown when the id trying to add is invalid
+    error InvalidId(uint256 id);
 
-// /**
-// @notice 
-//  */
-// contract Board is MERC1155 {
-//     bool public started;
-//     modifier gameStarted() {
-//         require(started, "no");
-//         _;
-//     }
+    /// @dev emitted when asset dies
+    event AssetDead(uint256 indexed _x, uint256 indexed _y);
+    /// @dev emitted when asset inflicts damage
+    event UpdateHealth(uint256 indexed _x, uint256 indexed _y, uint256 _xDamaged, uint256 _yDamaged);
 
-//     modifier gameNotStarted() {
-//         require(!started, "no");
-//         _;
-//     }
+    /// @dev number of times the action function has been called
+    uint256 public countTicks;
+    /// @dev true if game has started
+    bool public start;
+    /// @dev x->y->Asset info
+    mapping(uint256 => mapping(uint256 => Asset)) public asset;
+    /// @dev assetId->cid for ipfs/dpd
+    mapping(uint256 => bytes32) public metadata;
 
-//     //15x15 grid, 0 indexed, [x,y]
-//     uint256 public constant x = 14;
-//     uint256 public constant y = 14;
-//     mapping(uint256 => mapping(uint256 => Asset)) public assets;
+    /// @dev uses for actions that can only be undertaken when game is either ongoing or stoppped
+    /// @param _start true if need game to have already started, false otherwise
+    modifier gameStatus(bool _start) {
+        require(_start == start, "Cannot perform action in this game state");
+        _;
+    }
 
-//     event AssetHit(uint256 indexed x, uint256 indexed y);
-//     event AssetDead(uint256 indexed x, uint256 indexed y);
-//     event AssetPlaced(uint256 indexed x, uint256 indexed y);
-//     event AssetUnplaced(uint256 indexed x, uint256 indexed y);
-//     //true if mtx wins false otherwise
-//     event GameOver(bool indexed mtx);
+    /// @dev add castle in the middle
+    constructor(
+        string memory uri,
+        address pass,
+        address recipe
+    ) MERC1155(uri, pass, recipe) {
+        uint256 xMiddle = (X + 1) / 2;
+        uint256 yMiddle = (Y + 1) / 2;
+        asset[xMiddle][yMiddle] = Asset(address(this), castleHealth, castleId);
+    }
 
-//     ///@dev place castle in the middle
-//     constructor(
-//         string memory uri,
-//         address pass,
-//         address recipe
-//     ) MERC1155(uri, pass, recipe) {
-//         uint256 _x = (x + 1) / 2;
-//         uint256 _y = (y + 1) / 2;
-//         assets[keccak256(abi.encodePacked(_x, _y))] = Asset(false, address(this), address(this), 100, 0);
-//     }
+    /**
+     * @notice check if a given asset is a defense unit or an attacking unit
+     * @dev ids 1-10 reserved for defenders, 11-20 for attackers, castle is 0;
+     * for simplicity castle is assumned to be a defensive unit
+     * @param assetId asset id of asset to check
+     * @return true if defender, false if attacker
+     */
+    function checkType(uint256 assetId) public pure returns (bool) {
+        return assetId <= 10;
+    }
 
-//     //start/stop game
-//     function toggleGame(bool _started) public onlyRole(DEFAULT_ADMIN_ROLE) {
-//         started = _started;
-//     }
+    /**
+     * @notice check if a given asset can be placed at _x,_y acc to rules
+     * @dev attacking units can only be placed at the boundary of the grid
+     * similarly defender units cannot be placed at the boundary
+     * revert if rules are not followed
+     * @param _x x coordinate to place it in
+     * @param _y y coordinate to place it in
+     * @param id asset id to be placed
+     */
+    function checkPlaceConditions(
+        uint256 _x,
+        uint256 _y,
+        uint256 id
+    ) public view {
+        bool isDefender = checkType(id);
+        require(asset[_x][_y].health == 0, "space occupied");
+        bool onBoundary = _x == 0 || _y == 0 || _x == X || _y == Y;
+        if (isDefender) {
+            require(!onBoundary, "invalid defender location");
+        } else {
+            require(onBoundary, "invalid attacker location");
+        }
+    }
 
-//     /*//////////////////////////////////////////////////////////////////////
-//                                     GRID READ
-//     //////////////////////////////////////////////////////////////////////*/
+    /**
+     * @notice return health for asset id
+     * @dev revert if id is invalid
+     * @param assetId asset id of asset to check
+     * @return health of asset
+     */
+    function getHealthForAsset(uint256 assetId) public pure returns (uint256 health) {
+        if (assetId == turretId) {
+            health = turretHealth;
+        } else if (assetId == bomberId) {
+            health = bomberHealth;
+        } else if (assetId == generatorId) {
+            health = generatorHealth;
+        } else if (assetId == wallId) {
+            health = wallHealth;
+        } else if (assetId == meleeId) {
+            health = meleeHealth;
+        } else if (assetId == rangedId) {
+            health = rangedHealth;
+        } else if (assetId == explosiveId) {
+            health = explosiveHealth;
+        } else {
+            revert InvalidId(assetId);
+        }
+    }
 
-//     ///@dev if there isnt a generator within 2 units of _x,_y then it cannot defend
-//     ///@param _x x coordinate of defence asset
-//     ///@param _y y coordinate of defence asset
-//     ///@return true if there is a generator around
-//     function isGeneratorAround(uint256 _x, uint256 _y) public view returns (bool) {
-//         uint256 x_range = _x + 2;
-//         if (x_range > x) x_range = x;
-//         uint256 y_range = _y + 2;
-//         if (y_range > y) y_range = y;
+    /// @notice adjust x y coordinates according to board size and its range
+    function adjustInRange(
+        uint256 _x,
+        uint256 _y,
+        uint256 range
+    ) public view returns (uint256 xRange, uint256 yRange) {
+        xRange = _x + range;
+        if (xRange > X) xRange = X;
+        yRange = _y + range;
+        if (yRange > Y) yRange = Y;
+    }
 
-//         //[a,b]
-//         for (uint256 a = _x; a <= x_range; a++) {
-//             for (uint256 b = _y; b <= y_range; b++) {
-//                 if (isGenerator[getHash(a, b)]) return true;
-//             }
-//         }
-//         return false;
-//     }
+    /**
+     * @notice check if there is a generator around _x,_y
+     * @dev adjust for board size
+     * @return true if there is a generator
+     */
+    function isGeneratorAround(uint256 _x, uint256 _y) public view returns (bool) {
+        (uint256 xRange, uint256 yRange) = adjustInRange(_x, _y, generatorRange);
 
-//     //find unit in range of _x,_y
-//     //OOHHH only need to find one; return first one
-//     //if attacker == true find attackers with non zero health, else defenders
-//     //return: x,y,health of unit found
-//     function find(
-//         uint256 _x,
-//         uint256 _y,
-//         uint256 range,
-//         bool attacker
-//     )
-//         public
-//         view
-//         returns (
-//             uint256,
-//             uint256,
-//             uint256
-//         )
-//     {
-//         uint256 x_range = _x + range;
-//         if (x_range > x) x_range = x;
-//         uint256 y_range = _y + range;
-//         if (y_range > y) y_range = y;
+        for (uint256 a = _x; a <= xRange; a++) {
+            for (uint256 b = _y; b <= yRange; b++) {
+                Asset memory _asset = asset[a][b];
+                if (_asset.id == generatorId) return true;
+            }
+        }
+    }
 
-//         //[a,b]
-//         for (uint256 a = _x; a <= x_range; a++) {
-//             for (uint256 b = _y; b <= y_range; b++) {
-//                 Asset memory _asset = getAsset(_x, _y);
-//                 //nothing or dead
-//                 if (_asset.health == 0) continue;
-//                 //look for defenders
-//                 if (attacker) {
-//                     //just another attacker there
-//                     if (_asset.attacker) continue;
-//                     return (a, b, _asset.health);
-//                 } else {
-//                     //look for attackers
-//                     if (_asset.attacker) {
-//                         return (a, b, _asset.health);
-//                     }
-//                 }
-//             }
-//         }
-//         //if nothing found
-//         return (0, 0, 0);
-//     }
+    /**
+     * @notice find first enemy within range for asset at _x,_y
+     * @dev skip empty slots, find attackers for defenders and vice versa
+     * adjust for board size
+     * @param _x x coordinate of asset
+     * @param _y y coordinate of asset
+     * @param range range of asset
+     * @param isDefender true if defender
+     * @return _xEnemy x coordinate of enemy
+     * @return _yEnemy y coordinate of enemy
+     * @return exists true if exists, if we didnt have this then
+     * since the default value of uint is 0, the coordinates would have been
+     * 0,0 which is a valid location on the board
+     */
+    function find(
+        uint256 _x,
+        uint256 _y,
+        uint256 range,
+        bool isDefender
+    )
+        public
+        view
+        returns (
+            uint256 _xEnemy,
+            uint256 _yEnemy,
+            bool exists
+        )
+    {
+        (uint256 xRange, uint256 yRange) = adjustInRange(_x, _y, range);
 
-//     //find all in range, needed for splash damage
-//     function findAll(
-//         uint256 _x,
-//         uint256 _y,
-//         uint256 range,
-//         bool attacker
-//     )
-//         public
-//         view
-//         returns (
-//             uint256[] memory allX,
-//             uint256[] memory allY,
-//             uint256[] memory allHealth
-//         )
-//     {
-//         uint256 x_range = _x + range;
-//         if (x_range > x) x_range = x;
-//         uint256 y_range = _y + range;
-//         if (y_range > y) y_range = y;
+        for (uint256 a = _x; a <= xRange; a++) {
+            for (uint256 b = _y; b <= yRange; b++) {
+                Asset memory _asset = asset[a][b];
+                if (!(isDefender && checkType(_asset.id))) {
+                    _xEnemy = a;
+                    _yEnemy = b;
+                    exists = true;
+                    break;
+                }
+            }
+        }
+    }
 
-//         //worst case all need to be included coz surrounded by attackers F
-//         //+1 coz prevent out of bounds
-//         allX = new uint256[]((x_range * y_range) + 1);
-//         allY = new uint256[]((x_range * y_range) + 1);
-//         allHealth = new uint256[]((x_range * y_range) + 1);
-//         //keep track of pushed elements to above lists
-//         uint256 counter;
+    /**
+     * @notice find all enemies within range for asset at _x,_y
+     * @dev skip empty slots, find attackers for defenders and vice versa
+     * adjust for board size
+     * @param _x x coordinate of asset
+     * @param _y y coordinate of asset
+     * @param range range of asset
+     * @param isDefender true if defender
+     * @return _xEnemy x coordinate of enemies
+     * @return _yEnemy y coordinate of enemies
+     * @return exists true if exists, if we didnt have this then
+     * since the default value of uint is 0, the coordinates would have been
+     * 0,0 which is a valid location on the board
+     */
+    function findAll(
+        uint256 _x,
+        uint256 _y,
+        uint256 range,
+        bool isDefender
+    )
+        public
+        view
+        returns (
+            uint256[] memory _xEnemy,
+            uint256[] memory _yEnemy,
+            bool exists
+        )
+    {
+        (uint256 xRange, uint256 yRange) = adjustInRange(_x, _y, range);
+        // max added elemets will always be xRange * yRange -1 since this asset
+        // wont be added to it.
+        _xEnemy = new uint256[](xRange * yRange);
+        _yEnemy = new uint256[](xRange * yRange);
+        uint256 count;
+        for (uint256 a = _x; a <= xRange; a++) {
+            for (uint256 b = _y; b <= yRange; b++) {
+                Asset memory _asset = asset[a][b];
+                if (!(isDefender && checkType(_asset.id))) {
+                    _xEnemy[count] = a;
+                    _yEnemy[count] = b;
+                    exists = true;
+                    count++;
+                }
+            }
+        }
+    }
 
-//         //[a,b]
-//         for (uint256 a = _x; a <= x_range; a++) {
-//             for (uint256 b = _y; b <= y_range; b++) {
-//                 Asset memory _asset = getAsset(_x, _y);
-//                 //nothing or dead
-//                 if (_asset.health == 0) continue;
-//                 //look for defenders
-//                 if (attacker) {
-//                     //just another attacker there
-//                     if (_asset.attacker) continue;
-//                 } else {
-//                     //look for attackers
-//                     if (!_asset.attacker) {
-//                         continue;
-//                     }
-//                 }
-//                 allX[counter] = a;
-//                 allY[counter] = b;
-//                 allHealth[counter] = _asset.health;
-//                 counter++;
-//             }
-//         }
-//         //if nothing found
-//         return (allX, allY, allHealth);
-//     }
+    /**
+     * @notice place asset at _x,_y
+     * @dev has to abide by game rules and owner needs to own id
+     * @param _x x coordinate to place it in
+     * @param _y y coordinate to place it in
+     * @param owner address that owns the asset
+     * @param id id of the asset to place
+     */
+    function place(
+        uint256 _x,
+        uint256 _y,
+        address owner,
+        uint256 id
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) gameStatus(false) {
+        burn(owner, id, 1);
+        checkPlaceConditions(_x, _y, id);
+        uint256 health = getHealthForAsset(id);
+        asset[_x][_y] = Asset(owner, health, id);
+    }
 
-//     /*//////////////////////////////////////////////////////////////////////
-//                                 UPDATE BOARD
-//     //////////////////////////////////////////////////////////////////////*/
+    /**
+     * @notice unplace asset at _x,_y
+     * @dev owner must own the asset at _x,_y
+     * @param _x x coordinate to place it in
+     * @param _y y coordinate to place it in
+     * @param owner address that owns the asset
+     */
+    function unplace(
+        uint256 _x,
+        uint256 _y,
+        address owner
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) gameStatus(false) {
+        Asset memory _asset = asset[_x][_y];
+        mint(owner, _asset.health, 1, "");
+        delete asset[_x][_y];
+    }
 
-//     //update health
-//     function update(
-//         uint256 _x,
-//         uint256 _y,
-//         uint256 _newHealth
-//     ) public gameStarted whitelisted {
-//         if (_newHealth == 0) emit AssetDead(_x, _y);
-//         Asset memory _asset = getAsset(_x, _y);
-//         _asset.health = _newHealth;
-//         emit AssetHit(_x, _y);
-//     }
+    /// @notice toggle game start/stop
+    /// @dev only admin can toggle game
+    /// @param toggle set to true to start game, false otherwise
+    function toggleGame(bool toggle) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        start = toggle;
+    }
 
-//     /*//////////////////////////////////////////////////////////////////////
-//                                 PLACE/UNPLACE
-//     //////////////////////////////////////////////////////////////////////*/
+    // Keeper functions
+    // -------------------------------------------------
 
-//     //dont allow to put defence around boundary since thats where attacks will be placed
-//     //dont allow to put attack anywhere except boundary
-//     //make sure its within boundary
-//     //if attacker true then check attacker conditions
-//     function checkPlacementCondition(
-//         uint256 _x,
-//         uint256 _y,
-//         bool attacker
-//     ) public view {
-//         //if health 0 then nothing placed
-//         Asset memory _asset = getAsset(_x, _y);
-//         require(_asset.health == 0, "no");
-//         if (attacker) {
-//             require(_x == 0 || _y == 0 || _x == x || _y == y, "no");
-//         } else {
-//             require(_x != 0 && _y != 0 && _x < x && _y < y, "no");
-//         }
-//     }
+    /**
+     * @notice keeper will call this function for all _x,_y on board
+     * @dev checks if unit has health > 0, if yes that means its dead or empty
+     * call action function for corresponding asset at that location;
+     * all action functions then call the update function
+     * add countTicks
+     * castle does not defend itself
+     * for defender actions, a generator must be around
+     */
+    function action(uint256 _x, uint256 _y) external onlyRole(DEFAULT_ADMIN_ROLE) gameStatus(true) {
+        Asset memory _asset = asset[_x][_y];
+        uint256 assetId = _asset.id;
+        bool isDefender = checkType(assetId);
 
-//     function place(
-//         uint256 _x,
-//         uint256 _y,
-//         bool attacker,
-//         address _owner,
-//         address assetContract,
-//         uint256 health,
-//         uint256 assetId
-//     ) public gameNotStarted whitelisted {
-//         checkPlacementCondition(_x, _y, attacker);
-//         assets[getHash(_x, _y)] = Asset(attacker, _owner, assetContract, health, assetId);
-//         emit AssetPlaced(_x, _y);
-//     }
+        if (_asset.health == 0) return;
+        uint256 range;
+        uint256 damage;
+        if (isDefender && isGeneratorAround(_x, _y)) {
+            if (assetId == turretId) {
+                range = turretRange;
+                damage = turretDamage;
+            } else if (assetId == bomberId) {
+                if (countTicks % bomberFireTicks == 0) {
+                    (uint256[] memory _xEnemies, uint256[] memory _yEnemies, bool enemiesExist) = findAll(
+                        _x,
+                        _y,
+                        bomberRange,
+                        isDefender
+                    );
+                    if (enemiesExist) {
+                        for (uint256 z; z < _xEnemies.length; z++) {
+                            update(_xEnemies[z], _yEnemies[z], bomberDamage, _x, _y);
+                        }
+                    }
+                    return;
+                }
+            }
+        } else {
+            if (assetId == explosiveId) {
+                if (countTicks % explosiveFireTicks == 0) {
+                    range = explosiveRange;
+                    damage = explosiveDamage;
+                }
+            } else if (assetId == rangedId) {
+                range = rangedRange;
+                damage = rangedDamage;
+            } else if (assetId == meleeId) {
+                range = meleeRange;
+                damage = meleeDamage;
+            }
+        }
+        (uint256 _xEnemy, uint256 _yEnemy, bool exists) = find(_x, _y, turretRange, isDefender);
+        if (exists) {
+            update(_xEnemy, _yEnemy, turretDamage, _x, _y);
+        }
+        countTicks++;
+    }
 
-//     function placeGenerator(
-//         uint256 _x,
-//         uint256 _y,
-//         bool attacker,
-//         address _owner,
-//         address assetContract,
-//         uint256 health,
-//         uint256 assetId
-//     ) public gameNotStarted whitelisted {
-//         place(_x, _y, attacker, _owner, assetContract, health, assetId);
-//         isGenerator[getHash(_x, _y)] = true;
-//     }
+    /**
+     * @dev update health of asset at _xDamaged,_yDamaged
+     * assume find function filters out empty slots and there is an alive asset at these coordinates
+     * if health is being set to 0, then delete that asset; emit AssetDead event
+     * emit UpdatHealth event with new health
+     * @param _xDamaged x coordinate of asset thats damaged
+     * @param _yDamaged y coordinate of asset thats damaged
+     * @param damage amount to subtract from _xDamaged,_yDamaged's health
+     * @param _x x coordinate of asset inflicting damage
+     * @param _y y coordinate of asset inflicting damage
+     */
+    function update(
+        uint256 _xDamaged,
+        uint256 _yDamaged,
+        uint256 damage,
+        uint256 _x,
+        uint256 _y
+    ) private {
+        Asset storage _asset = asset[_xDamaged][_yDamaged];
+        if (_asset.health > damage) {
+            _asset.health -= damage;
+            emit UpdateHealth(_x, _y, _xDamaged, _yDamaged);
+        } else {
+            delete asset[_xDamaged][_yDamaged];
+            emit AssetDead(_xDamaged, _yDamaged);
+        }
+    }
 
-//     //remove from assets
-//     function unplace(uint256 _x, uint256 _y) public gameNotStarted whitelisted {
-//         delete assets[getHash(_x, _y)];
-//         emit AssetUnplaced(_x, _y);
-//     }
+    function move(uint256 _x, uint256 _y) external onlyRole(DEFAULT_ADMIN_ROLE) gameStatus(true) {}
 
-//     /*//////////////////////////////////////////////////////////////////////
-//                                     UTILS
-//     //////////////////////////////////////////////////////////////////////*/
-
-//     function getHash(uint256 _x, uint256 _y) public pure returns (bytes32) {
-//         return keccak256(abi.encodePacked(_x, _y));
-//     }
-
-//     function getAsset(uint256 _x, uint256 _y) public view returns (Asset memory) {
-//         return assets[getHash(_x, _y)];
-//     }
-
-//     //if castle health == 0 or all attackers dead then stop game
-//     function continueGame() public {
-//         uint256 _x = (x + 1) / 2;
-//         uint256 _y = (y + 1) / 2;
-//         Asset memory _asset = getAsset(_x, _y);
-//         if (_asset.health == 0) emit GameEnd();
-//     }
-
-//    
-
-//     /*//////////////////////////////////////////////////////////////////////
-//                             BEFORE AND AFTER
-//     //////////////////////////////////////////////////////////////////////*/
-
-//     //call from bot
-//     function updateAttackers() public gameStarted whitelisted {}
-
-//     //check if castl health more than 0 or attackers alive
-//     function continueGame() public gameStarted whitelisted {}
-
-//     /*//////////////////////////////////////////////////////////////////////
-//                                 READ BOARD
-//     //////////////////////////////////////////////////////////////////////*/
-// }
-
-
-//
+    function checkWinner() public view {}
+}
