@@ -17,18 +17,17 @@ uint256 constant turretDamage = 1;
 uint256 constant turretRange = 2;
 uint256 constant turretId = 1;
 
-///@dev special: can only fire once every 3 ticks and does splash damage
+///@dev special: can only fire once every 3 ticks and does splash damage in its range
 uint256 constant bomberHealth = 4;
 uint256 constant bomberDamage = 3;
 uint256 constant bomberRange = 2;
 //can only fire once every 3 ticks
 uint256 constant bomberFireTicks = 3;
-//splash damage to all attacking assets in a 2 unit radius
-uint256 constant bomberSplashDamage = 2;
 uint256 constant bomberId = 2;
 
 ///@dev special: all other defences need a generator within 2 blocks of it or else they cannot defend
 uint256 constant generatorHealth = 5;
+uint256 constant generatorRange = 2;
 uint256 constant generatorId = 3;
 
 ///@dev special:
@@ -61,6 +60,7 @@ uint256 constant explosiveHealth = 5;
 uint256 constant explosiveDamage = 5;
 uint256 constant explosiveRange = 1;
 uint256 constant explosiveMoveTicks = 1;
+uint256 constant explosiveFireTicks = 3;
 uint256 constant explosiveId = 13;
 
 /*//////////////////////////////////////////////////////////////////////
@@ -69,6 +69,7 @@ uint256 constant explosiveId = 13;
 uint256 constant X = 14;
 uint256 constant Y = 14;
 
+/// @dev health determines if slot is empty or not
 struct Asset {
     address owner;
     uint256 health;
