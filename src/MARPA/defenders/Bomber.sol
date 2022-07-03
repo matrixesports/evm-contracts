@@ -6,16 +6,18 @@ import "../interfaces/IBoard.sol";
 import "../interfaces/IDefender.sol";
 
 /**
-@notice a turret defense asset
+@notice a bomber defense asset
 @dev 
-- user is rewarded a turret by a lootbox
+- user is rewarded a bomber by a lootbox
 - id in contract must be equal to the creator_id
  */
 
-contract Turret is MERC1155, IDefender {
+contract Bomber is MERC1155, IDefender {
     uint256 public range = 2;
-    uint256 public health = 5;
-    uint256 public damage = 1;
+    uint256 public health = 4;
+    uint256 public damage = 3;
+    //once every 3 ticks
+    uint256 firingRate = 3;
     address public _board;
     IBoard private board = IBoard(_board);
 
@@ -32,19 +34,24 @@ contract Turret is MERC1155, IDefender {
         board = IBoard(_board);
     }
 
-    //find unit in range, damage it, send it back, i wish we could use delegate call here
-    //read and call maybe?
-    //loop over all stuff on board
-    //maybe bot looks up all and their health and only calls ones that have health?
+    //splash damage
     function defend(uint256 _x, uint256 _y) public onlyRole(DEFAULT_ADMIN_ROLE) {
-        (uint256 attack_x, uint256 attack_y, uint256 _attackerHealth) = board.find(_x, _y, range, false);
-        //check for underflow
-        if (_attackerHealth >= damage) {
-            _attackerHealth -= damage;
-        } else {
-            health = 0;
+        if (!board.isGeneratorAround(_x, _y)) return;
+        (uint256[] memory attack_x, uint256[] memory attack_y, uint256[] memory _attackerHealth) = board.findAll(
+            _x,
+            _y,
+            range,
+            false
+        );
+        for (uint256 z; z < attack_x.length; z++) {
+            //check for underflow
+            if (_attackerHealth[z] >= damage) {
+                _attackerHealth[z] -= damage;
+            } else {
+                health = 0;
+            }
+            board.update(attack_x[z], attack_y[z], _attackerHealth[z]);
         }
-        board.update(attack_x, attack_y, _attackerHealth);
     }
 
     //check if owner that they tryna place, if yea then call place in board, burn it too

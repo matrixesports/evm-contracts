@@ -41,6 +41,8 @@ contract Board {
     //each hash correspondo to a single point on the gird
     //and since x,y will always point to a unique spot we good
     mapping(bytes32 => Asset) public assets;
+    //generators are special
+    mapping(bytes32 => bool) public isGenerator;
 
     event AssetHit(uint256 indexed x, uint256 indexed y);
     event AssetDead(uint256 indexed x, uint256 indexed y);
@@ -103,6 +105,23 @@ contract Board {
     /*//////////////////////////////////////////////////////////////////////
                                 READ BOARD
     //////////////////////////////////////////////////////////////////////*/
+
+    //return true if there is a generator around
+    //must be within 2 blocks
+    function isGeneratorAround(uint256 _x, uint256 _y) public view gameStarted whitelisted returns (bool) {
+        uint256 x_range = _x + 2;
+        if (x_range > x) x_range = x;
+        uint256 y_range = _y + 2;
+        if (y_range > y) y_range = y;
+
+        //[a,b]
+        for (uint256 a = _x; a <= x_range; a++) {
+            for (uint256 b = _y; b <= y_range; b++) {
+                if (isGenerator[getHash(a, b)]) return true;
+            }
+        }
+        return false;
+    }
 
     //find unit in range of _x,_y
     //OOHHH only need to find one; return first one
@@ -255,6 +274,19 @@ contract Board {
         checkPlacementCondition(_x, _y, offensive);
         assets[getHash(_x, _y)] = Asset(offensive, _owner, assetContract, health, assetId);
         emit AssetPlaced(_x, _y);
+    }
+
+    function placeGenerator(
+        uint256 _x,
+        uint256 _y,
+        bool offensive,
+        address _owner,
+        address assetContract,
+        uint256 health,
+        uint256 assetId
+    ) public gameNotStarted whitelisted {
+        place(_x, _y, offensive, _owner, assetContract, health, assetId);
+        isGenerator[getHash(_x, _y)] = true;
     }
 
     //remove from assets

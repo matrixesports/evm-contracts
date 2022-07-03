@@ -46,6 +46,16 @@ interface IBoard {
         uint256 assetId
     ) external;
 
+    function placeGenerator(
+        uint256 _x,
+        uint256 _y,
+        bool offensive,
+        address _owner,
+        address assetContract,
+        uint256 health,
+        uint256 assetId
+    ) external;
+
     function unplace(uint256 _x, uint256 _y) external;
 
     function getAsset(uint256 _x, uint256 _y)
@@ -58,4 +68,6 @@ interface IBoard {
             uint256,
             uint256
         );
+
+    function isGeneratorAround(uint256 _x, uint256 _y) external view returns (bool);
 }
