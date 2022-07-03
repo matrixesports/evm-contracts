@@ -14,9 +14,13 @@ contract Board is MERC1155 {
     event AssetDead(uint256 indexed _x, uint256 indexed _y);
     /// @dev emitted when asset inflicts damage
     event UpdateHealth(uint256 indexed _x, uint256 indexed _y, uint256 _xDamaged, uint256 _yDamaged);
+    /// @dev emitted when game's over; winner is true if the defenders won
+    event GameOver(bool indexed winner);
 
     /// @dev number of times the action function has been called
     uint256 public countTicks;
+    /// @dev updated when attackers are added or they die
+    uint256 public numberOfAttackers;
     /// @dev true if game has started
     bool public start;
     /// @dev x->y->Asset info
@@ -60,14 +64,13 @@ contract Board is MERC1155 {
      * revert if rules are not followed
      * @param _x x coordinate to place it in
      * @param _y y coordinate to place it in
-     * @param id asset id to be placed
+     * @param isDefender true if defender is being placed
      */
     function checkPlaceConditions(
         uint256 _x,
         uint256 _y,
-        uint256 id
+        bool isDefender
     ) public view {
-        bool isDefender = checkType(id);
         require(asset[_x][_y].health == 0, "space occupied");
         bool onBoundary = _x == 0 || _y == 0 || _x == X || _y == Y;
         if (isDefender) {
@@ -108,7 +111,7 @@ contract Board is MERC1155 {
         uint256 _x,
         uint256 _y,
         uint256 range
-    ) public view returns (uint256 xRange, uint256 yRange) {
+    ) public pure returns (uint256 xRange, uint256 yRange) {
         xRange = _x + range;
         if (xRange > X) xRange = X;
         yRange = _y + range;
@@ -118,15 +121,15 @@ contract Board is MERC1155 {
     /**
      * @notice check if there is a generator around _x,_y
      * @dev adjust for board size
-     * @return true if there is a generator
+     * @return yes true if there is a generator
      */
-    function isGeneratorAround(uint256 _x, uint256 _y) public view returns (bool) {
+    function isGeneratorAround(uint256 _x, uint256 _y) public view returns (bool yes) {
         (uint256 xRange, uint256 yRange) = adjustInRange(_x, _y, generatorRange);
 
         for (uint256 a = _x; a <= xRange; a++) {
             for (uint256 b = _y; b <= yRange; b++) {
                 Asset memory _asset = asset[a][b];
-                if (_asset.id == generatorId) return true;
+                if (_asset.id == generatorId) yes = true;
             }
         }
     }
@@ -224,6 +227,7 @@ contract Board is MERC1155 {
     /**
      * @notice place asset at _x,_y
      * @dev has to abide by game rules and owner needs to own id
+     * update number of attackers if an attacker is being placed
      * @param _x x coordinate to place it in
      * @param _y y coordinate to place it in
      * @param owner address that owns the asset
@@ -235,8 +239,10 @@ contract Board is MERC1155 {
         address owner,
         uint256 id
     ) external onlyRole(DEFAULT_ADMIN_ROLE) gameStatus(false) {
+        bool isDefender = checkType(id);
+        if (!isDefender) numberOfAttackers++;
         burn(owner, id, 1);
-        checkPlaceConditions(_x, _y, id);
+        checkPlaceConditions(_x, _y, isDefender);
         uint256 health = getHealthForAsset(id);
         asset[_x][_y] = Asset(owner, health, id);
     }
@@ -244,6 +250,7 @@ contract Board is MERC1155 {
     /**
      * @notice unplace asset at _x,_y
      * @dev owner must own the asset at _x,_y
+     * decrease number of attackers
      * @param _x x coordinate to place it in
      * @param _y y coordinate to place it in
      * @param owner address that owns the asset
@@ -254,6 +261,8 @@ contract Board is MERC1155 {
         address owner
     ) external onlyRole(DEFAULT_ADMIN_ROLE) gameStatus(false) {
         Asset memory _asset = asset[_x][_y];
+        bool isDefender = checkType(_asset.id);
+        if (!isDefender) numberOfAttackers--;
         mint(owner, _asset.health, 1, "");
         delete asset[_x][_y];
     }
@@ -291,18 +300,7 @@ contract Board is MERC1155 {
                 damage = turretDamage;
             } else if (assetId == bomberId) {
                 if (countTicks % bomberFireTicks == 0) {
-                    (uint256[] memory _xEnemies, uint256[] memory _yEnemies, bool enemiesExist) = findAll(
-                        _x,
-                        _y,
-                        bomberRange,
-                        isDefender
-                    );
-                    if (enemiesExist) {
-                        for (uint256 z; z < _xEnemies.length; z++) {
-                            update(_xEnemies[z], _yEnemies[z], bomberDamage, _x, _y);
-                        }
-                    }
-                    return;
+                    defendBomber(_x, _y);
                 }
             }
         } else {
@@ -326,11 +324,28 @@ contract Board is MERC1155 {
         countTicks++;
     }
 
+    /// @dev execute bomber's defense action
+    function defendBomber(uint256 _x, uint256 _y) private {
+        (uint256[] memory _xEnemies, uint256[] memory _yEnemies, bool enemiesExist) = findAll(
+            _x,
+            _y,
+            bomberRange,
+            true
+        );
+        if (enemiesExist) {
+            for (uint256 z; z < _xEnemies.length; z++) {
+                update(_xEnemies[z], _yEnemies[z], bomberDamage, _x, _y);
+            }
+        }
+        return;
+    }
+
     /**
      * @dev update health of asset at _xDamaged,_yDamaged
      * assume find function filters out empty slots and there is an alive asset at these coordinates
      * if health is being set to 0, then delete that asset; emit AssetDead event
      * emit UpdatHealth event with new health
+     * if an attacker is dead then update number of attackers on the board
      * @param _xDamaged x coordinate of asset thats damaged
      * @param _yDamaged y coordinate of asset thats damaged
      * @param damage amount to subtract from _xDamaged,_yDamaged's health
@@ -349,12 +364,37 @@ contract Board is MERC1155 {
             _asset.health -= damage;
             emit UpdateHealth(_x, _y, _xDamaged, _yDamaged);
         } else {
+            bool isDefender = checkType(_asset.id);
+            if (!isDefender) numberOfAttackers--;
             delete asset[_xDamaged][_yDamaged];
             emit AssetDead(_xDamaged, _yDamaged);
         }
     }
 
-    function move(uint256 _x, uint256 _y) external onlyRole(DEFAULT_ADMIN_ROLE) gameStatus(true) {}
+    /**
+     * @notice check if game is over or not
+     * @dev require game to be onmgoing
+     * we dont want to calculate number of alive attackers by looping so we maintain another variable
+     * game is over if castle health == 0 or number of attackers == 0
+     * if game is over then terminate game
+     * emit GameOver event
+     * give SBT of win/lose
+     * @return over true if over false otherwise
+     */
+    function isGameOver() public returns (bool over) {
+        uint256 xMiddle = (X + 1) / 2;
+        uint256 yMiddle = (Y + 1) / 2;
+        Asset memory _asset = asset[xMiddle][yMiddle];
+        if (_asset.health == 0) {
+            over = true;
+            start = false;
+            emit GameOver(false);
+        } else if (numberOfAttackers == 0) {
+            over = true;
+            start = false;
+            emit GameOver(true);
+        } else {}
+    }
 
-    function checkWinner() public view {}
+    function move(uint256 _x, uint256 _y) external onlyRole(DEFAULT_ADMIN_ROLE) gameStatus(true) {}
 }
