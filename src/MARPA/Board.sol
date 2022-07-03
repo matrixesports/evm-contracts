@@ -69,6 +69,11 @@ contract Board {
 
     constructor() {
         owner = msg.sender;
+        //cant call getHash in constructor
+        //put castle in the center
+        uint256 _x = (x + 1) / 2;
+        uint256 _y = (y + 1) / 2;
+        assets[keccak256(abi.encodePacked(_x, _y))] = Asset(false, address(this), address(this), 100, 0);
     }
 
     //start stop game

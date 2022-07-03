@@ -6,9 +6,9 @@ import "../interfaces/IBoard.sol";
 import "../interfaces/IDefender.sol";
 
 /**
-@notice a turret defense asset
+@notice a wall defense asset
 @dev 
-- user is rewarded a turret by a lootbox
+- user is rewarded a wall by a lootbox
 - id in contract must be equal to the creator_id
  */
 
