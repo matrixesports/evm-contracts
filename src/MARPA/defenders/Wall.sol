@@ -14,6 +14,8 @@ import "../interfaces/IDefender.sol";
 
 contract Wall is MERC1155, IDefender {
     uint256 public health = 10;
+    uint256 public range;
+    uint256 public damage;
     address public _board;
     IBoard private board = IBoard(_board);
 
@@ -34,8 +36,7 @@ contract Wall is MERC1155, IDefender {
     //read and call maybe?
     //loop over all stuff on board
     //maybe bot looks up all and their health and only calls ones that have health?
-    //function defend(uint256 _x, uint256 _y) public onlyRole(DEFAULT_ADMIN_ROLE) {
-    //}
+    function defend(uint256 _x, uint256 _y) public onlyRole(DEFAULT_ADMIN_ROLE) {}
 
     //check if owner that they tryna place, if yea then call place in board, burn it too
     function place(
