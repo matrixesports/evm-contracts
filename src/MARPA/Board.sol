@@ -161,6 +161,14 @@ contract Board {
         uint256 y_range = _y + range;
         if (y_range > y) y_range = y;
 
+        //worst case all need to be included coz surrounded by attackers F
+        //+1 coz prevent out of bounds
+        allX = new uint256[]((x_range * y_range) + 1);
+        allY = new uint256[]((x_range * y_range) + 1);
+        allHealth = new uint256[]((x_range * y_range) + 1);
+        //keep track of pushed elements to above lists
+        uint256 counter;
+
         //[a,b]
         for (uint256 a = _x; a <= x_range; a++) {
             for (uint256 b = _y; b <= y_range; b++) {
@@ -171,17 +179,20 @@ contract Board {
                 if (offensive) {
                     //just another attacker there
                     if (_asset.offensive) continue;
-                    return (a, b, _asset.health);
                 } else {
                     //look for attackers
-                    if (_asset.offensive) {
-                        return (a, b, _asset.health);
+                    if (!_asset.offensive) {
+                        continue;
                     }
                 }
+                allX[counter] = a;
+                allY[counter] = b;
+                allHealth[counter] = _asset.health;
+                counter++;
             }
         }
         //if nothing found
-        return (0, 0, 0);
+        return (allX, allY, allHealth);
     }
 
     /*//////////////////////////////////////////////////////////////////////

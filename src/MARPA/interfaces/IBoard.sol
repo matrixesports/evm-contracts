@@ -16,6 +16,20 @@ interface IBoard {
             uint256
         );
 
+    function findAll(
+        uint256 _x,
+        uint256 _y,
+        uint256 range,
+        bool offensive
+    )
+        external
+        view
+        returns (
+            uint256[] memory allX,
+            uint256[] memory allY,
+            uint256[] memory allHealth
+        );
+
     function update(
         uint256 _x,
         uint256 _y,
