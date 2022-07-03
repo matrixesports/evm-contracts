@@ -8,6 +8,20 @@ contract Board is MERC1155 {
     /// @dev thrown when the id trying to add is invalid
     error InvalidId(uint256 id);
 
+    /// @dev true if game has started
+    bool public start;
+    /// @dev x->y->Asset info
+    mapping(uint256 => mapping(uint256 => Asset)) public asset;
+    /// @dev assetId->cid for ipfs/dpd
+    mapping(uint256 => bytes32) public metadata;
+
+    /// @dev uses for actions that can only be undertaken when game is either ongoing or stoppped
+    /// @param _start true if need game to have already started, false otherwise
+    modifier gameStatus(bool _start) {
+        require(_start == start, "Cannot perform action in this game state");
+        _;
+    }
+
     /// @dev add castle in the middle
     constructor(
         string memory uri,
@@ -18,11 +32,6 @@ contract Board is MERC1155 {
         uint256 yMiddle = (Y + 1) / 2;
         asset[xMiddle][yMiddle] = Asset(address(this), castleHealth, castleId);
     }
-
-    /// @dev x->y->Asset info
-    mapping(uint256 => mapping(uint256 => Asset)) public asset;
-    /// @dev assetId->cid for ipfs/dpd
-    mapping(uint256 => bytes32) public metadata;
 
     /**
      * @notice check if a given asset is a defense unit or an attacking unit
@@ -98,7 +107,7 @@ contract Board is MERC1155 {
         uint256 _y,
         address owner,
         uint256 id
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) gameStatus(false) {
         burn(owner, id, 1);
         checkPlaceConditions(_x, _y, id);
         uint256 health = getHealthForAsset(id);
@@ -116,9 +125,16 @@ contract Board is MERC1155 {
         uint256 _x,
         uint256 _y,
         address owner
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    ) external onlyRole(DEFAULT_ADMIN_ROLE) gameStatus(false) {
         Asset memory _asset = asset[_x][_y];
         mint(owner, _asset.health, 1, "");
         delete asset[_x][_y];
+    }
+
+    /// @notice toggle game start/stop
+    /// @dev only admin can toggle game
+    /// @param toggle set to true to start game, false otherwise
+    function toggleGame(bool toggle) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        start = toggle;
     }
 }
