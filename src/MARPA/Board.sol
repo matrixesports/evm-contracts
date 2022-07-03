@@ -24,8 +24,6 @@ contract Board is Assets {
     bool public start;
     /// @dev x->y->Asset info
     mapping(uint256 => mapping(uint256 => Asset)) public asset;
-    /// @dev assetId->cid for ipfs/dpd
-    mapping(uint256 => bytes32) public metadata;
 
     /// @dev uses for actions that can only be undertaken when game is either ongoing or stoppped
     /// @param _start true if need game to have already started, false otherwise
@@ -39,7 +37,7 @@ contract Board is Assets {
         string memory uri,
         address pass,
         address recipe
-    ) MERC1155(uri, pass, recipe) {
+    ) Assets(uri, pass, recipe) {
         uint256 xMiddle = (X + 1) / 2;
         uint256 yMiddle = (Y + 1) / 2;
         asset[xMiddle][yMiddle] = Asset(address(this), CASTLE_HEALTH, CASTLE_ID);

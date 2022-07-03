@@ -49,7 +49,7 @@ contract MERC1155 is ERC1155, AccessControl, IMERC1155 {
                                     URI
     //////////////////////////////////////////////////////////////////////*/
 
-    function uri(uint256 id) public view override returns (string memory) {
+    function uri(uint256 id) public view virtual override returns (string memory) {
         return string.concat(tokenURI, "/", Strings.toString(id), ".json");
     }
 
@@ -57,12 +57,7 @@ contract MERC1155 is ERC1155, AccessControl, IMERC1155 {
         tokenURI = _uri;
     }
 
-    function supportsInterface(bytes4 interfaceId)
-        public
-        view
-        override(ERC1155, AccessControl)
-        returns (bool)
-    {
+    function supportsInterface(bytes4 interfaceId) public view override(ERC1155, AccessControl) returns (bool) {
         return super.supportsInterface(interfaceId);
     }
 }
