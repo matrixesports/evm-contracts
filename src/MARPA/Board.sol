@@ -2,11 +2,10 @@
 pragma solidity >=0.8.0;
 
 import "./Assets.sol";
-import "../rewards/MERC1155.sol";
 
 /// @notice
 /// @author rayquaza7
-contract Board is MERC1155 {
+contract Board is Assets {
     /// @dev thrown when the id trying to add is invalid
     error InvalidId(uint256 id);
 
@@ -43,7 +42,7 @@ contract Board is MERC1155 {
     ) MERC1155(uri, pass, recipe) {
         uint256 xMiddle = (X + 1) / 2;
         uint256 yMiddle = (Y + 1) / 2;
-        asset[xMiddle][yMiddle] = Asset(address(this), castleHealth, castleId);
+        asset[xMiddle][yMiddle] = Asset(address(this), CASTLE_HEALTH, CASTLE_ID);
     }
 
     /**
@@ -87,20 +86,20 @@ contract Board is MERC1155 {
      * @return health of asset
      */
     function getHealthForAsset(uint256 assetId) public pure returns (uint256 health) {
-        if (assetId == turretId) {
-            health = turretHealth;
-        } else if (assetId == bomberId) {
-            health = bomberHealth;
-        } else if (assetId == generatorId) {
-            health = generatorHealth;
-        } else if (assetId == wallId) {
-            health = wallHealth;
-        } else if (assetId == meleeId) {
-            health = meleeHealth;
-        } else if (assetId == rangedId) {
-            health = rangedHealth;
-        } else if (assetId == explosiveId) {
-            health = explosiveHealth;
+        if (assetId == TURRET_ID) {
+            health = TURRET_HEALTH;
+        } else if (assetId == BOMBER_ID) {
+            health = BOMBER_HEALTH;
+        } else if (assetId == GENERATOR_ID) {
+            health = GENERATOR_HEALTH;
+        } else if (assetId == WALL_ID) {
+            health = WALL_HEALTH;
+        } else if (assetId == MELEE_ID) {
+            health = MELEE_HEALTH;
+        } else if (assetId == RANGED_ID) {
+            health = RANGED_HEALTH;
+        } else if (assetId == EXPLOSIVE_ID) {
+            health = EXPLOSIVE_HEALTH;
         } else {
             revert InvalidId(assetId);
         }
@@ -124,12 +123,12 @@ contract Board is MERC1155 {
      * @return yes true if there is a generator
      */
     function isGeneratorAround(uint256 _x, uint256 _y) public view returns (bool yes) {
-        (uint256 xRange, uint256 yRange) = adjustInRange(_x, _y, generatorRange);
+        (uint256 xRange, uint256 yRange) = adjustInRange(_x, _y, GENERATOR_RANGE);
 
         for (uint256 a = _x; a <= xRange; a++) {
             for (uint256 b = _y; b <= yRange; b++) {
                 Asset memory _asset = asset[a][b];
-                if (_asset.id == generatorId) yes = true;
+                if (_asset.id == GENERATOR_ID) yes = true;
             }
         }
     }
@@ -295,31 +294,31 @@ contract Board is MERC1155 {
         uint256 range;
         uint256 damage;
         if (isDefender && isGeneratorAround(_x, _y)) {
-            if (assetId == turretId) {
-                range = turretRange;
-                damage = turretDamage;
-            } else if (assetId == bomberId) {
-                if (countTicks % bomberFireTicks == 0) {
+            if (assetId == TURRET_ID) {
+                range = TURRET_RANGE;
+                damage = TURRET_DAMAGE;
+            } else if (assetId == BOMBER_ID) {
+                if (countTicks % BOMBER_FIRE_TICKS == 0) {
                     defendBomber(_x, _y);
                 }
             }
         } else {
-            if (assetId == explosiveId) {
-                if (countTicks % explosiveFireTicks == 0) {
-                    range = explosiveRange;
-                    damage = explosiveDamage;
+            if (assetId == EXPLOSIVE_ID) {
+                if (countTicks % EXPLOSIVE_FIRE_TICKS == 0) {
+                    range = EXPLOSIVE_RANGE;
+                    damage = EXPLOSIVE_DAMAGE;
                 }
-            } else if (assetId == rangedId) {
-                range = rangedRange;
-                damage = rangedDamage;
-            } else if (assetId == meleeId) {
-                range = meleeRange;
-                damage = meleeDamage;
+            } else if (assetId == RANGED_ID) {
+                range = RANGED_RANGE;
+                damage = RANGED_DAMAGE;
+            } else if (assetId == MELEE_ID) {
+                range = MELEE_RANGE;
+                damage = MELEE_DAMAGE;
             }
         }
-        (uint256 _xEnemy, uint256 _yEnemy, bool exists) = find(_x, _y, turretRange, isDefender);
+        (uint256 _xEnemy, uint256 _yEnemy, bool exists) = find(_x, _y, TURRET_RANGE, isDefender);
         if (exists) {
-            update(_xEnemy, _yEnemy, turretDamage, _x, _y);
+            update(_xEnemy, _yEnemy, TURRET_DAMAGE, _x, _y);
         }
         countTicks++;
     }
@@ -329,12 +328,12 @@ contract Board is MERC1155 {
         (uint256[] memory _xEnemies, uint256[] memory _yEnemies, bool enemiesExist) = findAll(
             _x,
             _y,
-            bomberRange,
+            BOMBER_RANGE,
             true
         );
         if (enemiesExist) {
             for (uint256 z; z < _xEnemies.length; z++) {
-                update(_xEnemies[z], _yEnemies[z], bomberDamage, _x, _y);
+                update(_xEnemies[z], _yEnemies[z], BOMBER_DAMAGE, _x, _y);
             }
         }
         return;
