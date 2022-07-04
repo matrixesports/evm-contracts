@@ -9,6 +9,15 @@
     "src/**/*.sol"
   ],
   "devDependencies": {
+    "@typechain/ethers-v5": "^10.1.0",
+    "@typechain/hardhat": "^6.1.2",
+    "@types/axios": "^0.14.0",
+    "@types/pg": "^8.6.5",
+    "chai": "^4.3.6",
+    "@oclif/core": "^1.9.5",
+    "@oclif/plugin-help": "^5.1.12",
+    "@oclif/plugin-plugins": "^2.1.0",
+    "@types/node": "^18.0.0",
     "@nomiclabs/hardhat-ethers": "^2.0.6",
     "@nomiclabs/hardhat-etherscan": "^3.1.0",
     "axios": "^0.27.2",
@@ -27,5 +36,20 @@
   "scripts": {
     "all": "make install",
     "lint": "make lint"
+  },
+  "oclif": {
+    "bin": "admin",
+    "dirname": "admin",
+    "commands": "./admincli/src/commands",
+    "plugins": [
+      "@oclif/plugin-help",
+      "@oclif/plugin-plugins"
+    ],
+    "topicSeparator": " ",
+    "topics": {
+      "topic": {
+        "description": ""
+      }
+    }
   }
 }

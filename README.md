@@ -96,3 +96,13 @@ Each creator that we onboard gets their own `BattlePass`, `CreatorToken` and `Pa
 - https://github.com/Rari-Capital/solmate
 - https://github.com/abigger87/femplate
 - https://github.com/foundry-rs/forge-template
+
+# AdminClI
+
+- Create folder creators/'creator_id'
+- Create folder creators/'creator_id'/pass
+- Create folder creators/'creator_id'/images
+- Create folder creators/'creator_id'/metadata
+- Create README.md in creators/'creator_id'/
+
+- v2 replace with admin init
