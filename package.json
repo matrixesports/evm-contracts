@@ -8,7 +8,7 @@
   "files": [
     "src/**/*.sol"
   ],
-  "dependencies": {
+  "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.6",
     "@nomiclabs/hardhat-etherscan": "^3.1.0",
     "axios": "^0.27.2",
@@ -25,7 +25,7 @@
     "typescript": "^4.7.4"
   },
   "scripts": {
-    "all": "foundryup && forge update && yarn install",
+    "all": "foundryup && forge install && yarn install",
     "lint": "prettier --write src/**/*.sol && prettier --write src/*.sol"
   }
 }

@@ -51,10 +51,7 @@ contract Redeemable is MERC1155 {
         Redemption[] storage redeemedByUser = redeemed[user];
         bool found = false;
         for (uint256 x; x < redeemedByUser.length; x++) {
-            if (
-                keccak256(abi.encodePacked(redeemedByUser[x].ticketId)) ==
-                keccak256(abi.encodePacked(ticketId))
-            ) {
+            if (keccak256(abi.encodePacked(redeemedByUser[x].ticketId)) == keccak256(abi.encodePacked(ticketId))) {
                 redeemedByUser[x].status = status;
                 found = true;
             }

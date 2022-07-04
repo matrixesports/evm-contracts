@@ -20,7 +20,7 @@
   - solmate, forge-std works fine with forge update
   - need to keep an eye on oz, master branch is dev branch, works on release branches, current version installed is v4.6.0. https://github.com/foundry-rs/foundry/issues/401
   - same for chainlink, current version installed is v1.5.1
-- erc20 token takes decimals into account, so to give nice whole numbers account for that
+- erc20 token takes decimals into account, so to give nice whole numbers, account for that
 
 ## Development
 
@@ -30,7 +30,6 @@
 2. `main` branch is for production and changes are only merged if all tests + front end integration tests pass.
 3. use feature branches for all other changes
 4. refer to `pull_request_template` when opening a PR
-5. adhere to `https://sparkbox.com/foundry/semantic_commit_messages`, keep it simple, short and optimally each commit does 1 thing.
 
 ## Common commands:
 
@@ -63,7 +62,7 @@ Bundle: Multiple ERC20/721/1155 tokens
 
 **Redeemable**: Used when a creator wants to issue rewards that involve manual fulfillment or intervention. For example: Get a follow back on twitter, instagram, merch, etc. Once rewarded, user _redeems_ a reward. We keep track of fulfillment status and provide the user a way to see all of their redeemed rewards to ensure transparency and accountability.
 
-## Structure heavily inspired by:
+## Repo Structure heavily inspired by:
 
 ---
 

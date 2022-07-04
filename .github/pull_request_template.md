@@ -1,6 +1,6 @@
 # Description
 
-Describe the changes made in your pull request here.
+Describe the changes made in your pull request here. Make sure to add/change tests if changes made to contracts.
 
 # Checklist
 

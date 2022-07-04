@@ -65,11 +65,7 @@ contract Lootbox is VRFConsumerBaseV2, MERC1155, ReentrancyGuard, Utils {
         callbackGasLimit = newLimit;
     }
 
-    function newLootbox(LootboxBundle[] calldata bundles)
-        external
-        onlyRole(DEFAULT_ADMIN_ROLE)
-        returns (uint256)
-    {
+    function newLootbox(LootboxBundle[] calldata bundles) external onlyRole(DEFAULT_ADMIN_ROLE) returns (uint256) {
         lootboxId++;
 
         uint256 cumulativeProbability;
@@ -117,11 +113,7 @@ contract Lootbox is VRFConsumerBaseV2, MERC1155, ReentrancyGuard, Utils {
         );
     }
 
-    function fulfillRandomWords(uint256 requestId, uint256[] memory randomWords)
-        internal
-        override
-        nonReentrant
-    {
+    function fulfillRandomWords(uint256 requestId, uint256[] memory randomWords) internal override nonReentrant {
         uint256 id = requestIdToLootboxId[requestId];
         address user = requestIdToUser[requestId];
         uint256 bundleRewardIdx = calculateIndexFromRandom(id, randomWords[0], user);
@@ -149,9 +141,7 @@ contract Lootbox is VRFConsumerBaseV2, MERC1155, ReentrancyGuard, Utils {
         LootboxBundle[] memory bundles = rewards[id];
 
         for (uint256 x; x < bundles.length; x++) {
-            if (
-                rangeNumber >= bundles[x].rarityRange[0] && rangeNumber < bundles[x].rarityRange[1]
-            ) {
+            if (rangeNumber >= bundles[x].rarityRange[0] && rangeNumber < bundles[x].rarityRange[1]) {
                 return x;
             }
         }
@@ -162,11 +152,7 @@ contract Lootbox is VRFConsumerBaseV2, MERC1155, ReentrancyGuard, Utils {
         return rewards[id].length;
     }
 
-    function getLootboxBundle(uint256 id, uint256 index)
-        public
-        view
-        returns (LootboxBundle memory)
-    {
+    function getLootboxBundle(uint256 id, uint256 index) public view returns (LootboxBundle memory) {
         return rewards[id][index];
     }
 }

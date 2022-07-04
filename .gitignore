@@ -1,19 +1,14 @@
-
 # Node.js
 /node_modules/
 
 # Solidity
 /out/
 /cache/
-flattened.sol
-
-# ============================================================================ #
-# Application
-# ============================================================================ #
+/broadcast/
+/artifacts_hardhat/
+/cache_hardhat/
+/script/Dev.s.sol
 
 # Environment
 .env
 .slitherenv/
-artifacts_hardhat
-cache_hardhat
-broadcast/
