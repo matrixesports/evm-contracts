@@ -4,7 +4,7 @@ pragma solidity >=0.8.0;
 import "./Assets.sol";
 
 /// @notice
-/// @author rayquaza7
+/// @author rayquaza7, manasabir
 contract Board is Assets {
     /// @dev thrown when the id trying to add is invalid
     error InvalidId(uint256 id);
@@ -15,6 +15,8 @@ contract Board is Assets {
     event UpdateHealth(uint256 indexed _x, uint256 indexed _y, uint256 _xDamaged, uint256 _yDamaged);
     /// @dev emitted when game's over; winner is true if the defenders won
     event GameOver(bool indexed winner);
+    /// @dev emiited when an attacker moves
+    event AttackerMove(uint256 _x, uint256 _y, uint256 newX, uint256 newY);
 
     /// @dev number of times the action function has been called
     uint256 public countTicks;
@@ -38,9 +40,7 @@ contract Board is Assets {
         address pass,
         address recipe
     ) Assets(uri, pass, recipe) {
-        uint256 xMiddle = (X + 1) / 2;
-        uint256 yMiddle = (Y + 1) / 2;
-        asset[xMiddle][yMiddle] = Asset(address(this), CASTLE_HEALTH, CASTLE_ID);
+        asset[CASTLE_X][CASTLE_Y] = Asset(address(this), CASTLE_HEALTH, CASTLE_ID);
     }
 
     /**
@@ -379,9 +379,7 @@ contract Board is Assets {
      * @return over true if over false otherwise
      */
     function isGameOver() public returns (bool over) {
-        uint256 xMiddle = (X + 1) / 2;
-        uint256 yMiddle = (Y + 1) / 2;
-        Asset memory _asset = asset[xMiddle][yMiddle];
+        Asset memory _asset = asset[CASTLE_X][CASTLE_Y];
         if (_asset.health == 0) {
             over = true;
             start = false;
@@ -393,5 +391,55 @@ contract Board is Assets {
         } else {}
     }
 
-    function move(uint256 _x, uint256 _y) external onlyRole(DEFAULT_ADMIN_ROLE) gameStatus(true) {}
+    /**
+     * @notice move attackers, called for every unit in grid once action and check for isGameOver is made
+     * @dev
+     * return if health of unit == 0 or is a defender
+     * check if there are any defences in range; if yes then dont move
+     * if not then move towards the castle making sure that u dont go where another attacker already is
+     * will revert if game ended
+     * @param _x x coordinate
+     * @param _y y coordinate
+     */
+    function move(uint256 _x, uint256 _y) external onlyRole(DEFAULT_ADMIN_ROLE) gameStatus(true) {
+        Asset memory _asset = asset[_x][_y];
+        bool defenderExists;
+        if (_asset.health == 0 || checkType(_asset.id)) return;
+        if (_asset.id == MELEE_ID && countTicks % MELEE_MOVE_TICKS == 0) {
+            (, , defenderExists) = find(_x, _y, MELEE_RANGE, false);
+        } else if (_asset.id == RANGED_ID && countTicks % RANGED_MOVE_TICKS == 0) {
+            (, , defenderExists) = find(_x, _y, RANGED_RANGE, false);
+        } else if (_asset.id == EXPLOSIVE_ID) {
+            (, , defenderExists) = find(_x, _y, EXPLOSIVE_RANGE, false);
+        }
+        if (defenderExists) return;
+
+        uint256 newX;
+        uint256 newY;
+        if (_x > CASTLE_X && _y > CASTLE_Y) {
+            newX = _x - 1;
+            newY = _y - 1;
+        } else if (_x < CASTLE_X && _y < CASTLE_Y) {
+            newX = _x + 1;
+            newY = _y + 1;
+        } else if (_y > CASTLE_Y) {
+            newX = _x;
+            newY = _y - 1;
+        } else if (_y < CASTLE_Y) {
+            newX = _x;
+            newY = _y + 1;
+        } else if (_x > CASTLE_X) {
+            newX = _x - 1;
+            newY = _y;
+        } else if (_x < CASTLE_X) {
+            newX = _x + 1;
+            newY = _y;
+        }
+        //check if there is an asset there
+        //account for 2nd best, 3rd best position and so on
+        //since asset is dead at newX,newY, so is deleted
+        asset[newX][newY] = _asset;
+        delete asset[_x][_y];
+        emit AttackerMove(_x, _y, newX, newY);
+    }
 }
