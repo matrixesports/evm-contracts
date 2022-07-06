@@ -5,13 +5,14 @@
 /out/
 /cache/
 flattened.sol
+/artifacts_hardhat
+/cache_hardhat
+/broadcast/
 
 # Environment
 .env
 .slitherenv/
-artifacts_hardhat
-cache_hardhat
-broadcast/
 TODO
+
 
 MTXToken.sol
