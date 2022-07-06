@@ -1,14 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
-import "openzeppelin-contracts/contracts/access/IAccessControl.sol";
-
-interface IMERC1155 is IAccessControl {
+interface IBattlePass {
     function mint(
         address to,
         uint256 id,
-        uint256 amount,
-        bytes memory data
+        uint256 amount
     ) external;
 
     function burn(
@@ -16,4 +13,6 @@ interface IMERC1155 is IAccessControl {
         uint256 id,
         uint256 amount
     ) external;
+
+    function checkType(uint256 id) external;
 }

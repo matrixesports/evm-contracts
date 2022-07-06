@@ -16,7 +16,7 @@ remappings = [
 
 
 # extends default options
-[ci]
+[intense]
 fuzz-runs = 10_000
 cache = false
 force = true
