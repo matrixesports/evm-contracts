@@ -20,6 +20,7 @@ enum RedeemStatus {
     REJECTED
 }
 
+/// @dev used when a user redeems an item
 struct Redemption {
     uint256 itemId;
     RedeemStatus status;
@@ -35,7 +36,6 @@ struct Redemption {
  * ids.length == qtys.length
  * if any of the ids is CREATOR_TOKEN_ID then call the creator token contract
  */
-
 struct LootboxOption {
     uint256[2] rarityRange;
     uint256[] ids;
