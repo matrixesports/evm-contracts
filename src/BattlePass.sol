@@ -49,14 +49,13 @@ error RewardAlreadyClaimed(uint256 seasonId, address user);
  * Allows for giving out rewards at each level
  * Rewards can be NFTs/Tokens/Lootboxes
  * Allows for delegation of tokens to other users in a creator's community
+ *
  */
 contract BattlePass is Rewards {
     /// @dev emitted when a new season is created
     /// @param seasonId new season id
     event NewSeason(uint256 indexed seasonId);
 
-    /// @dev crafting address, upgradeable by admin
-    address public crafting;
     /// @dev current season id
     uint256 public seasonId;
 
@@ -65,17 +64,11 @@ contract BattlePass is Rewards {
     /// @dev user->seasonId->User, store user info for each season
     mapping(address => mapping(uint256 => User)) public userInfo;
 
-    constructor(string memory _uri) Rewards(_uri) {}
+    constructor(string memory _uri, address _crafting) Rewards(_uri, _crafting) {}
 
     /*//////////////////////////////////////////////////////////////////////
                                 ADMIN 
     //////////////////////////////////////////////////////////////////////*/
-
-    /// @notice change crafting address
-    /// @param newCrafting new crafting address
-    function setCrafting(address newCrafting) external onlyOwner {
-        crafting = newCrafting;
-    }
 
     /// @notice give xp to a user upon completion of quests
     /// @dev only owner can give xp

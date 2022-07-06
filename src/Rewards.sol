@@ -2,26 +2,9 @@
 pragma solidity >=0.8.0;
 
 import "./ICreatorToken.sol";
-import "solmate/tokens/ERC1155.sol";
 import "solmate/auth/Owned.sol";
+import "solmate/tokens/ERC1155.sol";
 import "openzeppelin-contracts/contracts/utils/Strings.sol";
-
-/**
- * @title Pass Rewards
- * @author rayquaza7
- * @notice mint creator specific tokens, premium passes, lootboxes, nfts, redeemable items, etc.
- * @dev
- * ERC1155 is used since it allows for both fungible and non fungible tokens
- * TOKEN IDS to give out as rewards:
- * 1-999: Premium Passses for different seasons.
- * if a user has token id 2, that means they have a premium pass for season 2.
- * assumes that no creator will realistically create more than 1000 seasons
- * 1000: Creator specific token
- * 1,001-10,000: Lootboxes
- * 10,001-20,000: Redeemable Items
- * 20,001-30,000: Special use items, nfts/tokens with unique logic according to creator requirement
- *
- */
 
 enum RewardType {
     PREMIUM_PASS,
@@ -70,9 +53,27 @@ error IncorrectLootboxOptions();
 /// @dev should never be called
 error LOLHowDidYouGetHere(uint256 lootboxId);
 
+/**
+ * @title Pass Rewards
+ * @author rayquaza7
+ * @notice mint creator specific tokens, premium passes, lootboxes, nfts, redeemable items, etc.
+ * @dev
+ * ERC1155 is used since it allows for both fungible and non fungible tokens
+ * crafting contract is allowed to mint burn items for a user based on recipes
+ * TOKEN IDS to give out as rewards:
+ * 1-999: Premium Passses for different seasons.
+ * if a user has token id 2, that means they have a premium pass for season 2.
+ * assumes that no creator will realistically create more than 1000 seasons
+ * 1000: Creator specific token
+ * 1,001-10,000: Lootboxes
+ * 10,001-20,000: Redeemable Items
+ * 20,001-30,000: Special use items, nfts/tokens with unique logic according to creator requirement
+ *
+ */
 abstract contract Rewards is ERC1155, Owned {
-    constructor(string memory _uri) Owned(msg.sender) {
+    constructor(string memory _uri, address _crafting) Owned(msg.sender) {
         tokenURI = _uri;
+        crafting = _crafting;
     }
 
     /// @notice check reward type given id
@@ -110,6 +111,53 @@ abstract contract Rewards is ERC1155, Owned {
     /// @param _uri new ipfs hash
     function setURI(string memory _uri) external onlyOwner {
         tokenURI = _uri;
+    }
+
+    /*//////////////////////////////////////////////////////////////
+                                CRAFTING
+    //////////////////////////////////////////////////////////////*/
+
+    /// @dev crafting address, upgradeable by admin
+    address public crafting;
+
+    /// @notice change crafting address
+    /// @param newCrafting new crafting address
+    function setCrafting(address newCrafting) external onlyOwner {
+        crafting = newCrafting;
+    }
+
+    /// @notice allow crafting & owner to mint items
+    /// @dev revert if id == CREATOR_TOKEN_ID since its handled by different contract
+    /// revert if id is invalid
+    /// @param to address to mint to
+    /// @param id id to mint
+    /// @param amount to mint
+    function mint(
+        address to,
+        uint256 id,
+        uint256 amount
+    ) public {
+        require(owner == msg.sender || msg.sender == crafting, "Only crafting/owner can mint/burn");
+        require(id != CREATOR_TOKEN_ID, "CANNOT MINT CREATOR TOKEN");
+        checkType(id);
+        _mint(to, id, amount, "");
+    }
+
+    /// @notice allow crafting & owner to burn items
+    /// @dev revert if id == CREATOR_TOKEN_ID since its handled by different contract
+    /// revert if id is invalid; will revert if there is an underflow
+    /// @param from address to burn from
+    /// @param id to burn
+    /// @param amount to burn
+    function burn(
+        address from,
+        uint256 id,
+        uint256 amount
+    ) public {
+        require(owner == msg.sender || msg.sender == crafting, "Only crafting/owner can mint/burn");
+        require(id != CREATOR_TOKEN_ID, "CANNOT BURN CREATOR TOKEN");
+        checkType(id);
+        _burn(from, id, amount);
     }
 
     /*//////////////////////////////////////////////////////////////
