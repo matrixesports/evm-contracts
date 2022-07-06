@@ -71,6 +71,10 @@ Each creator that we onboard gets their own `BattlePass`, `CreatorToken` and `Pa
 1. `yarn all`
 2. create .env file based on `.sampleenv`
 
+## Contracts
+
+---
+
 ## Things to be careful of
 
 ---
