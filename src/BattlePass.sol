@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
-import "./PassReward.sol";
+import "./Rewards.sol";
 
 /** @dev Info stored each level
  * if you want to give out multiple rewards at a level then have the id correspond to a lootbox
@@ -50,7 +50,7 @@ error RewardAlreadyClaimed(uint256 seasonId, address user);
  * Rewards can be NFTs/Tokens/Lootboxes
  * Allows for delegation of tokens to other users in a creator's community
  */
-contract BattlePass is PassReward {
+contract BattlePass is Rewards {
     /// @dev emitted when a new season is created
     /// @param seasonId new season id
     event NewSeason(uint256 indexed seasonId);
@@ -65,7 +65,7 @@ contract BattlePass is PassReward {
     /// @dev user->seasonId->User, store user info for each season
     mapping(address => mapping(uint256 => User)) public userInfo;
 
-    constructor(string memory _uri) PassReward(_uri) {}
+    constructor(string memory _uri) Rewards(_uri) {}
 
     /*//////////////////////////////////////////////////////////////////////
                                 ADMIN 

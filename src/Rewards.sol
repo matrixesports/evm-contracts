@@ -70,7 +70,7 @@ error IncorrectLootboxOptions();
 /// @dev should never be called
 error LOLHowDidYouGetHere(uint256 lootboxId);
 
-abstract contract PassReward is ERC1155, Owned {
+abstract contract Rewards is ERC1155, Owned {
     constructor(string memory _uri) Owned(msg.sender) {
         tokenURI = _uri;
     }
