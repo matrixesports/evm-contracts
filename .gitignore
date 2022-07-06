@@ -4,11 +4,15 @@
 # Solidity
 /out/
 /cache/
+flattened.sol
+/artifacts_hardhat
+/cache_hardhat
 /broadcast/
-/artifacts_hardhat/
-/cache_hardhat/
-/script/Dev.s.sol
 
 # Environment
 .env
 .slitherenv/
+TODO
+
+
+MTXToken.sol

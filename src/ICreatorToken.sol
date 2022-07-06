@@ -1,10 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
-import "openzeppelin-contracts/contracts/access/IAccessControl.sol";
-
-/// @notice expose mint, burn and access control methods
-interface IMERC20 is IAccessControl {
+interface ICreatorToken {
     function mint(address to, uint256 amount) external;
 
     function burn(address from, uint256 amount) external;

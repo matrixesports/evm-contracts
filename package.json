@@ -1,6 +1,6 @@
 {
   "name": "evm-contracts",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "evm contracts used in the matrix ecosystem",
   "main": "index.ts",
   "repository": "git@github.com:matrixesports/evm-contracts.git",
@@ -25,7 +25,7 @@
     "typescript": "^4.7.4"
   },
   "scripts": {
-    "all": "foundryup && forge install && yarn install",
-    "lint": "prettier --write src/**/*.sol && prettier --write src/*.sol"
+    "all": "make install",
+    "lint": "make lint"
   }
 }

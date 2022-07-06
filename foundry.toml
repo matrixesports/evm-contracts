@@ -11,7 +11,6 @@ remappings = [
     'solmate/=lib/solmate/src/',
     'openzeppelin-contracts/=lib/openzeppelin-contracts/',
     'forge-std/=lib/forge-std/src/',
-    'chainlink/=lib/chainlink/'
 ]
 
 
