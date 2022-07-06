@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
+import "./ICreatorToken.sol";
 import "solmate/tokens/ERC1155.sol";
 import "solmate/auth/Owned.sol";
 import "openzeppelin-contracts/contracts/utils/Strings.sol";
@@ -47,24 +48,25 @@ struct Redemption {
  * the rarity range of all lootboxes must add up to be 1
  * the lower bound is inclusive and the upper bound is exclusive
  * ids correspond to the array of ids to give out for this option
- * if you want to give out multiple qtys of an id then just add it multiple times
+ * give qtys[x] of ids[x]
+ * ids.length == qtys.length
+ * if any of the ids is CREATOR_TOKEN_ID then call the creator token contract
  */
 
 struct LootboxOption {
     uint256[2] rarityRange;
     uint256[] ids;
+    uint256[] qtys;
 }
 
 uint256 constant CREATOR_TOKEN_ID = 1000;
 
-/// @dev used when delagator tries to delegate more than they have
-error InsufficientBalance(address delegator, uint256 owned, uint256 delegatedAmount);
 /// @dev used when id is not within any of the approved id ranges
 error InvalidId(uint256 id);
 /// @dev used when ticket id does not exist
 error TicketIdDoesNotExist(bytes32 ticketId);
-/// @dev used when ranges for a new lootbox are incorrect
-error ProbabilityRangeIncorrect();
+/// @dev used when details for a new lootbox are incorrect
+error IncorrectLootboxOptions();
 /// @dev should never be called
 error LOLHowDidYouGetHere(uint256 lootboxId);
 
@@ -111,47 +113,6 @@ abstract contract PassReward is ERC1155, Owned {
     }
 
     /*//////////////////////////////////////////////////////////////
-                            DELEGATION
-    //////////////////////////////////////////////////////////////*/
-
-    /// @dev delegator->delegatee->amount; track who delegates to whom and how much
-    mapping(address => mapping(address => uint256)) public delegatedBy;
-    /// @dev track total delegated to an address
-    mapping(address => uint256) public delegatedTotal;
-
-    /// @notice delegate tokens to delegatee
-    /// @param delegator the address delegating tokens
-    /// @param delegatee the address tokens are being delegated to
-    /// @param amount the amount of tokens to delegate
-    function delegate(
-        address delegator,
-        address delegatee,
-        uint256 amount
-    ) public onlyOwner {
-        uint256 owned = balanceOf[delegator][CREATOR_TOKEN_ID];
-        if (owned < amount) revert InsufficientBalance(delegator, owned, amount);
-        balanceOf[delegator][CREATOR_TOKEN_ID] -= amount;
-        delegatedBy[delegator][delegatee] += amount;
-        delegatedTotal[delegatee] += amount;
-    }
-
-    /// @notice undeledelegate tokens from delegatee
-    /// @param delegator the address that delegated tokens
-    /// @param delegatee the address tokens were delegated to
-    /// @param amount the amount of tokens to undelegate
-    function undelegate(
-        address delegator,
-        address delegatee,
-        uint256 amount
-    ) public onlyOwner {
-        uint256 amountDelegated = delegatedBy[delegator][delegatee];
-        if (amountDelegated < amount) revert InsufficientBalance(delegator, amountDelegated, amount);
-        balanceOf[delegator][CREATOR_TOKEN_ID] += amount;
-        delegatedBy[delegator][delegatee] -= amount;
-        delegatedTotal[delegator] -= amount;
-    }
-
-    /*//////////////////////////////////////////////////////////////
                         REDEEMABLE ITEMS
     //////////////////////////////////////////////////////////////*/
 
@@ -189,29 +150,44 @@ abstract contract PassReward is ERC1155, Owned {
 
     /// @dev lootbox id incremented when a new lootbox is created
     uint256 public lootboxId = 1001;
+    /// @dev creator token contract address
+    address public creatorTokenCtr;
     /// @dev lootbox id-> all options in a lootbox
     mapping(uint256 => LootboxOption[]) internal lootboxRewards;
 
-    /// @notice create a new lootbox
-    /// @dev check if id and probability ranges are valid
-    /// @param options all the options avaliable in a lootbox
-    /// @return new lootbox id
+    /// @notice set token contract for creator
+    function setCreatorTokenCtr(address _creatorTokenCtr) public onlyOwner {
+        creatorTokenCtr = _creatorTokenCtr;
+    }
+
+    /**
+     * @notice create a new lootbox
+     * @dev c
+     * will recert if prob ranges dont add upto 10
+     * will revert if  if length of ids != length of qtys
+     * will rever if invalid ids are passed to be added
+     * @param options all the options avaliable in a lootbox
+     * @return new lootbox id
+     */
     function newLootbox(LootboxOption[] memory options) external onlyOwner returns (uint256) {
         lootboxId++;
         uint256 cumulativeProbability;
         for (uint256 x = 0; x < options.length; x++) {
             for (uint256 y; y < options[x].ids.length; y++) {
                 checkType(options[x].ids[y]);
+                if (options[x].ids.length != options[x].qtys.length) revert IncorrectLootboxOptions();
             }
             cumulativeProbability = options[x].rarityRange[1] - options[x].rarityRange[0];
             lootboxRewards[lootboxId].push(options[x]);
         }
-        if (cumulativeProbability != 10) revert ProbabilityRangeIncorrect();
+        if (cumulativeProbability != 10) revert IncorrectLootboxOptions();
         return lootboxId;
     }
 
     /// @notice open a lootbox for a user
     /// @dev only owner can call it and user must own lootbox before
+    /// call the creator token contract if id == CREATOR_TOKEN_ID
+    ///
     /// @param id id of lootbox trying to open
     /// @param user trying to open a lootbox
     function openLootbox(uint256 id, address user) public onlyOwner {
@@ -219,7 +195,11 @@ abstract contract PassReward is ERC1155, Owned {
         uint256 idx = calculateRandom(id);
         LootboxOption memory option = lootboxRewards[id][idx];
         for (uint256 x; x < option.ids.length; x++) {
-            _mint(user, id, 1, "");
+            if (option.ids[x] == CREATOR_TOKEN_ID && creatorTokenCtr != address(0)) {
+                ICreatorToken(creatorTokenCtr).mint(user, option.qtys[x]);
+            } else {
+                _mint(user, option.ids[x], option.qtys[x], "");
+            }
         }
     }
 
@@ -233,7 +213,6 @@ abstract contract PassReward is ERC1155, Owned {
             )
         ) % 10;
         LootboxOption[] memory options = lootboxRewards[id];
-
         for (uint256 x; x < options.length; x++) {
             // lower bound is inclusive but upper isnt
             if (random >= options[x].rarityRange[0] && random < options[x].rarityRange[1]) {
