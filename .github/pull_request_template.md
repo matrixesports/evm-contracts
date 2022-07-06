@@ -6,6 +6,6 @@ Describe the changes made in your pull request here. Make sure to add/change tes
 
 Ensure you completed all of the steps below before submitting your pull request:
 
-- [x] Ran forge snapshot?
-- [x] Ran yarn lint?
-- [x] Ran forge test?
+- [ ] Ran forge snapshot?
+- [ ] Ran yarn lint?
+- [ ] Ran forge test?
