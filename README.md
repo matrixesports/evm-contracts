@@ -69,7 +69,7 @@ Each creator that we onboard gets their own `BattlePass`, `CreatorToken` and `Pa
 ---
 
 1. `yarn all`
-2. setup env variables based on `.sampleenv` file
+2. create .env file based on `.sampleenv`
 
 ## Things to be careful of
 
@@ -86,8 +86,8 @@ Each creator that we onboard gets their own `BattlePass`, `CreatorToken` and `Pa
 
 1. This project uses [Foundry](https://getfoundry.sh). See the [book](https://book.getfoundry.sh/getting-started/installation.html) for instructions on how to install and use Foundry.
 2. `main` branch is for production and changes are only merged if all tests + front end integration tests pass.
-3. use feature branches for all other changes
-4. refer to `pull_request_template` when opening a PR
+3. Use feature branches for all other changes
+4. Refer to `pull_request_template` when opening a PR
 
 ## Repo Structure heavily inspired by:
 

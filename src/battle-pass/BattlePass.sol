@@ -3,12 +3,12 @@ pragma solidity >=0.8.0;
 
 import "./Rewards.sol";
 
-/** @dev Info stored each level
- * if you want to give out multiple rewards at a level then have the id correspond to a lootbox
- * xpToCompleteLevel: xp required to go from level x->x+1;
- * if info is for the last level then xpToCompleteLevel must be 0
- * freeRewardId: free reward id to give at level x
- * premiumRewardId: premium reward id to give at level x
+/** @dev stores info for each level
+ * xpToCompleteLevel: xp required to levelup, x->x+1;
+ * at the final level the xpToCompleteLevel must be 0
+ * freeReward: free reward id to give at level x
+ * premiumReward: premium reward id to give at level x
+ * use lootbox (with 1 lootboxOption) to give multiple rewards at level x
  */
 struct LevelInfo {
     uint256 xpToCompleteLevel;
@@ -18,43 +18,53 @@ struct LevelInfo {
     uint256 premiumRewardQty;
 }
 
-/** @dev Info stored on each user for each season
- * xp: how much xp the user has
- * claimedPremiumPass: true if a user has claimed their first premium pass reward
- * need this because once a user gets a premium pass then
- * they can claim a premium reward after which they should not be able to
- * sell it but still be able to claim other premium rewards
- * claimed: has user claimed reward for given level and prem status
+/** @dev stores user info
+ * xp: user's xp 
+ * premium pass gets burned when used for the first time 
+ * claimedPremiumPass: true when user claims their *first* premium reward
+ * user can claim premium rewards when claimedPremiumPass is true
+ * claimed: true when reward is claimed at level and status {free or prem}
  */
 struct User {
     uint256 xp;
     bool claimedPremiumPass;
+    // level->prem?->claimed? 
     mapping(uint256 => mapping(bool => bool)) claimed;
 }
 
-/// @dev used when there is an error while creating a new season
+/// @dev use when an error occurrs while creating a new season
 error IncorrectSeasonDetails(address admin);
-/// @dev used when user is trying to claim a reward for a level at which they are not
+/// @dev use when user claims a reward for a level at which they are NOT
 error NotAtLevelNeededToClaimReward(uint256 seasonId, address user, uint256 actualLevel, uint256 requiredLevel);
-/// @dev used when user does not have premium pass and they are trying to redeem a premum reward
+/// @dev use when user claims a premium reward without owning a premium pass or claimedPremiumPass is false
 error NeedPremiumPassToClaimPremiumReward(uint256 seasonId, address user);
-/// @dev used when reward has already been claimed by a user
+/// @dev use when user claima an already claimed reward 
 error RewardAlreadyClaimed(uint256 seasonId, address user);
 
 /**
- * @title A Battle Pass contract representing a Battle Pass as used in games.
+ * @title A Battle Pass 
  * @author rayquaza7
+ * @notice
+ * Battle Pass is a system that rewards users for completing creator specific quests 
+ * during established time periods known as seasons
+ * Each creator gets 1 unique Battle Pass and the contract allows multiple seasons
+ * Tracks user progress at each level and across seasons
+ * Allows for giving out rewards at specified levels
+ * Rewards can be { NFTs, Tokens, Lootboxes, Redeemables }
+ * Allows for delegation of tokens to other users in a creator's community
  */
 contract BattlePass is Rewards {
     /// @dev emitted when a new season is created
+    /// @param seasonId new seasonId
     event NewSeason(uint256 indexed seasonId);
 
-    /// @dev current season id
+    /// @dev current active seasonId
     uint256 public seasonId;
 
     /// @dev seasonId->level->LevelInfo
     mapping(uint256 => mapping(uint256 => LevelInfo)) public seasonInfo;
-    /// @dev user->seasonId->User, store user info for each season
+    /// @dev user->seasonId->User
+    /// stores user info for each season
     mapping(address => mapping(uint256 => User)) public userInfo;
 
     constructor(
@@ -68,10 +78,10 @@ contract BattlePass is Rewards {
                                 ADMIN 
     //////////////////////////////////////////////////////////////////////*/
 
-    /// @notice give xp to a user upon completion of quests
+    /// @notice gives xp to a user upon completion of quests
     /// @dev only owner can give xp
-    /// @param _seasonId season id for which xp is to be given
-    /// @param xp how much xp to give
+    /// @param _seasonId seasonId for which to give xp 
+    /// @param xp amount of xp to give
     /// @param user user to give xp to
     function giveXp(
         uint256 _seasonId,
@@ -81,11 +91,11 @@ contract BattlePass is Rewards {
         userInfo[user][_seasonId].xp += xp;
     }
 
-    /// @notice change xp required to complete a level
-    /// @dev can set xp after season has been created; only owner can change xp
-    /// @param _seasonId season id to change the xp for
-    /// @param _level level for which the xp needs to be changed
-    /// @param xp the new xp required to complete _level
+    /// @notice sets required xp to levelup
+    /// @dev owner can set xp after season creation
+    /// @param _seasonId seasonId for which to change xp
+    /// @param _level level at which to change xp
+    /// @param xp new xp required to levelup
     function setXp(
         uint256 _seasonId,
         uint256 _level,
@@ -95,12 +105,11 @@ contract BattlePass is Rewards {
     }
 
     /**
-     * @notice create a new season
+     * @notice creates a new season
      * @dev only owner can call it
-     * @param levelInfo info about each level, levelInfo[0] corresponds to info on level 0
-     * last level must have xpToCompleteLevel == 0
-     * last level is levelInfo.length - 1, since arrays are 0 indexed and levelInfo[0] contains info on 0 level
-     * @return current season id
+     * @param levelInfo info about each level, levelInfo[0] corresponds to info on a level 0
+     * last level must be (evelInfo.length - 1) and must have xpToCompleteLevel == 0
+     * @return current current active seasonId
      */
     function newSeason(LevelInfo[] calldata levelInfo) external onlyOwner returns (uint256) {
         seasonId++;
@@ -116,20 +125,19 @@ contract BattlePass is Rewards {
     }
 
     /**
-     * @notice claim reward upon reaching a new level
-     * @dev
-     * revert if trying to claim reward for level at which the user is not
-     * revert if reward is already claimed
-     * revert if trying to redeem premium reward and user is not eligible for it
-     * if user has premium pass and it is their first time claiming a premium reward then
-     * burn 1 pass from their balance and set claimedPremiumPass to be true. This is done
-     * to prevent the user from selling their premium pass after claiming a premium reward.
-     * A user can own multiple premium passes just like any other reward.
-     * It will NOT be burned if the user has already claimed a premium reward.
-     * @param _seasonId for which the reward is to be claimed
-     * @param user user address that is claiming the reward
-     * @param _level the level for which reward is being claimed
-     * @param premium true if premium reward is to be claimed, false otherwise
+     * @notice claims a reward for a seasonId and at level
+     * @dev reverts when:
+     *      user claims a reward for a level at which they are NOT
+     *      user claims an already claimed reward 
+     *      user claims a premium reward, but is NOT eligible for it
+     * when a user has a premium pass and it is their first time claiming a premium reward then
+     * burn 1 pass from their balance and set claimedPremiumPass to be true
+     * a user can own multiple premium passes just like any other reward
+     * it will NOT be burned if the user has already claimed a premium reward
+     * @param _seasonId seasonId for which to claim the reward
+     * @param user user address claiming the reward
+     * @param _level level at which to claim the reward 
+     * @param premium true when claiming a premium reward
      */
     function claimReward(
         uint256 _seasonId,
@@ -167,11 +175,11 @@ contract BattlePass is Rewards {
         }
     }
 
-    /// @notice add/update reward for a level and season
-    /// @dev only owner can change it
-    /// @param _seasonId season id to change the reward for
-    /// @param _level level for which the reward needs to be changed
-    /// @param premium true if adding/updating premium reward
+    /// @notice sets a reward for a seasonId and at level
+    /// @dev only owner can set rewards
+    /// @param _seasonId seasonId for which to change the reward
+    /// @param _level level at which to change the reward
+    /// @param premium true when setting a premium reward
     /// @param id new reward id
     /// @param qty new reward qty
     function addReward(
@@ -194,12 +202,13 @@ contract BattlePass is Rewards {
                             READ/VIEW
     //////////////////////////////////////////////////////////////////////*/
 
-    /// @notice check if the user has a premium pass
-    /// @dev a user is not considered premium until they either own one premium pass
-    /// or already have claimed a premium reward.
+    /// @notice checks if a user has premium pass
+    /// @dev user is considered premium when:
+    ///     they own one premium pass or
+    ///     they have already claimed a premium reward
     /// @param user user address
-    /// @param _seasonId season id for which the user might have a premium pass
-    /// @return true if user has a premium pass, false otherwise
+    /// @param _seasonId seasonId for which to check for premium pass
+    /// @return true when user has premium status
     function isUserPremium(address user, uint256 _seasonId) public view returns (bool) {
         if (userInfo[user][_seasonId].claimedPremiumPass || balanceOf[user][_seasonId] >= 1) {
             return true;
@@ -208,9 +217,10 @@ contract BattlePass is Rewards {
         }
     }
 
-    /// @notice calculate level of a user for a given season
-    /// @param user user address to calculate the level for
-    /// @param _seasonId season for which level is to be calculated
+    /// @notice gets user level for a seasonId
+    /// @dev breaks at the last level, where xpToCompleteLevel is 0
+    /// @param user user address for which to get level
+    /// @param _seasonId seasonId for which to get level
     /// @return userLevel current user level
     function level(address user, uint256 _seasonId) public view returns (uint256 userLevel) {
         uint256 maxLevelInSeason = getMaxLevel(_seasonId);
@@ -233,8 +243,12 @@ contract BattlePass is Rewards {
         }
     }
 
-    /// @notice is reward claimed by user for given season id, level and prem status
-    /// @return true if reward has been claimed
+    /// @notice checks user claim status on a reward for a seasonId and at level
+    /// @param user user address for which to check
+    /// @param _seasonId seasonId for which to check
+    /// @param _level level at which to check
+    /// @param premium true when checking for premium rewards
+    /// @return true when reward is claimed
     function isRewardClaimed(
         address user,
         uint256 _seasonId,
