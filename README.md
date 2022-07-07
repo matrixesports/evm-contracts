@@ -1,9 +1,11 @@
-# EVM contracts used in the MTX ecosystem
+<div align="center">
+
+# MATRIX EVM Contracts
+</div>
 
 <div align="center">
 
 ## [![Tests](https://github.com/matrixesports/evm-contracts/actions/workflows/tests.yml/badge.svg)](https://github.com/matrixesports/evm-contracts/actions/workflows/tests.yml)[![Lints](https://github.com/matrixesports/evm-contracts/actions/workflows/lints.yml/badge.svg)](https://github.com/matrixesports/evm-contracts/actions/workflows/lints.yml)
-
 </div>
 
 ## Contracts
@@ -72,12 +74,20 @@ Each creator that we onboard gets their own `BattlePass`, `CreatorToken` and `Pa
 
 ---
 
-1. `yarn all`
-2. create .env file based on `.sampleenv`
+<ol type="i">
+<li> <p style="color:#FFBF00;"> yarn all </p> 
+<li> <p> create .env file based on <span style="color:#FFBF00;">.sampleenv</span> </p>
+</ol>
 
-## Contracts
+## Development
 
 ---
+<ol type="i">
+<li> <p> This project uses <a href="https://getfoundry.sh">Foundry</a>. See the <a href="https://book.getfoundry.sh/getting-started/installation.html">book</a> for instructions on how to install and use Foundry. </p> 
+<li> <p> <span style="color:#FFBF00;">main</span> branch is for production only. Changes are merged if all FE integrations and contracts tests pass. </p>
+<li> <p> Use feature branches for all other changes </p>
+<li> <p> Refer to <span style="color:#FFBF00;">pull_request_template</span> when opening a PR </p>
+</ol>
 
 ## Things to be careful of
 
@@ -87,15 +97,6 @@ Each creator that we onboard gets their own `BattlePass`, `CreatorToken` and `Pa
   - solmate, forge-std works fine with forge update
   - need to keep an eye on oz, master branch is dev branch, works on release branches, current version installed is v4.6.0. https://github.com/foundry-rs/foundry/issues/401
 - erc20 token takes decimals into account, so to give nice whole numbers, account for that
-
-## Development
-
----
-
-1. This project uses [Foundry](https://getfoundry.sh). See the [book](https://book.getfoundry.sh/getting-started/installation.html) for instructions on how to install and use Foundry.
-2. `main` branch is for production and changes are only merged if all tests + front end integration tests pass.
-3. Use feature branches for all other changes
-4. Refer to `pull_request_template` when opening a PR
 
 ## Repo Structure heavily inspired by:
 
