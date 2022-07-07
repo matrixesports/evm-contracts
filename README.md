@@ -5,7 +5,7 @@
 
 <div align="center">
 
-## [![Tests](https://github.com/matrixesports/evm-contracts/actions/workflows/tests.yml/badge.svg)](https://github.com/matrixesports/evm-contracts/actions/workflows/tests.yml)[![Lints](https://github.com/matrixesports/evm-contracts/actions/workflows/lints.yml/badge.svg)](https://github.com/matrixesports/evm-contracts/actions/workflows/lints.yml)
+[![Tests](https://github.com/matrixesports/evm-contracts/actions/workflows/tests.yml/badge.svg)](https://github.com/matrixesports/evm-contracts/actions/workflows/tests.yml)[![Lints](https://github.com/matrixesports/evm-contracts/actions/workflows/lints.yml/badge.svg)](https://github.com/matrixesports/evm-contracts/actions/workflows/lints.yml)
 </div>
 
 ## Contracts
@@ -72,8 +72,6 @@ Each creator that we onboard gets their own `BattlePass`, `CreatorToken` and `Pa
 
 ## Getting started
 
----
-
 <ol type="i">
 <li> <code>yarn all</code>. </p> 
 <li> <p> create .env file based on <code>.sampleenv</code>. </p>
@@ -81,7 +79,6 @@ Each creator that we onboard gets their own `BattlePass`, `CreatorToken` and `Pa
 
 ## Development
 
----
 <ul type="-">
 <li> <p> This project uses <a href="https://getfoundry.sh">Foundry</a>. See the <a href="https://book.getfoundry.sh/getting-started/installation.html">book</a> for instructions on how to install and use Foundry. </p> 
 <li> <p> <code>main</code> branch is for production only. Changes are merged if all FE integrations and contracts tests pass. </p>
@@ -98,10 +95,11 @@ Each creator that we onboard gets their own `BattlePass`, `CreatorToken` and `Pa
   - need to keep an eye on oz, master branch is dev branch, works on release branches, current version installed is v4.6.0. https://github.com/foundry-rs/foundry/issues/401
 - erc20 token takes decimals into account, so to give nice whole numbers, account for that
 
-## Repo Structure heavily inspired by:
+### Repo Structure heavily inspired by:
 
----
+<ul type="-">
+<li> <a href="https://github.com/Rari-Capital/solmate">solmate</a>
+<li> <a href="https://github.com/abigger87/femplate">femplate</a>
+<li> <a href="https://github.com/foundry-rs/forge-template">foundry</a>
+</ul>
 
-- https://github.com/Rari-Capital/solmate
-- https://github.com/abigger87/femplate
-- https://github.com/foundry-rs/forge-template
