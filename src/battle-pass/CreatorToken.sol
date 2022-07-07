@@ -7,7 +7,6 @@ import "solmate/tokens/ERC20.sol";
 /// @dev use when a delagator tries to delegate more than they own
 error InsufficientBalance(address delegator, uint256 owned, uint256 delegatedAmount);
 
-/// @notice contract for erc20 token specific to the creator with delegation
 /**
  * @title Creator Token contract
  * @author rayquaza7
