@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
-interface IBattlePass {
+interface IRewards {
     function mint(
         address to,
         uint256 id,
@@ -13,6 +13,4 @@ interface IBattlePass {
         uint256 id,
         uint256 amount
     ) external;
-
-    function checkType(uint256 id) external;
 }

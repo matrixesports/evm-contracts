@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
-import "./battle_pass/IBattlePass.sol";
+import "./battle_pass/IRewards.sol";
 import "solmate/auth/Owned.sol";
 
 /// @dev used when trying to craft a recipe thats not active
@@ -50,7 +50,7 @@ contract Recipe is Owned {
     /**
      * @notice create a new recipe
      * @dev assumes that the ids you are adding are valid based on the spec in BattlePass.sol
-     * will revert if ids are invalid
+     * assume person creating the recipe knows what they are doing
      * will revert if length of ids is not equal to length of ids and tokens
      * @param input ingredients
      * @param output ingredients
@@ -64,12 +64,6 @@ contract Recipe is Owned {
             output.ids.length == output.qtys.length
         ) {
             revert IncorrectRecipeDetails();
-        }
-        for (uint256 x; x < input.tokens.length; x++) {
-            IBattlePass(input.tokens[x]).checkType(input.ids[x]);
-        }
-        for (uint256 x; x < output.tokens.length; x++) {
-            IBattlePass(output.tokens[x]).checkType(output.ids[x]);
         }
 
         unchecked {
@@ -95,10 +89,10 @@ contract Recipe is Owned {
         Ingredients memory input = inputIngredients[_recipeId];
         Ingredients memory output = outputIngredients[_recipeId];
         for (uint256 x; x < input.tokens.length; x++) {
-            IBattlePass(input.tokens[x]).burn(user, input.ids[x], input.qtys[x]);
+            IRewards(input.tokens[x]).burn(user, input.ids[x], input.qtys[x]);
         }
         for (uint256 x; x < output.tokens.length; x++) {
-            IBattlePass(output.tokens[x]).mint(user, output.ids[x], output.qtys[x]);
+            IRewards(output.tokens[x]).mint(user, output.ids[x], output.qtys[x]);
         }
     }
 

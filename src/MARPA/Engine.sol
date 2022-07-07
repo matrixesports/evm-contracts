@@ -1,30 +1,39 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
-import "./defenders/Defender.sol";
-import "./attackers/Attacker.sol";
+import "./EternalGlory.sol";
+import "./AssetStats.sol";
+import "../RewardIDConstants.sol";
+import "../battle_pass/IRewards.sol";
+import {InvalidId} from "../battle_pass/Rewards.sol";
 import "solmate/auth/Owned.sol";
 
-/// @dev health determines if slot is empty or not
+/// @dev track info on asset placed on a grid location
+/// health determines if slot is empty or not
 struct Asset {
     address owner;
     uint256 health;
     uint256 id;
 }
 
-/// @dev thrown when the id trying to add is invalid
-error InvalidId(uint256 id);
-
-/// @dev grid size of the board
-uint256 constant X = 14;
-uint256 constant Y = 14;
-/// @dev castle is put in the middle
-uint256 constant CASTLE_X = (X + 1) / 2;
-uint256 constant CASTLE_Y = (Y + 1) / 2;
-
-/// @notice each community gets their own copy of this contract that they own
-/// @author rayquaza7
-contract Board {
+/**
+ * @title MTX Game
+ * @notice logic and state for the MTX Game
+ * @author rayquaza7
+ * @dev each community gets one copy of this contract
+ * players win defenders by completing quests for their creator in the Battle Pass
+ * they talk among themelves on discord, figure out where to put their defenders
+ * they can place their defenders on the game map until the deadline
+ * the goal is to protect their castle in the middle
+ * after the deadline, placing/unplacing is freezed
+ * MTX has attackers that it places randomly before the deadline as well
+ * at the deadline the attack begins, all actions happen automatically afterwards
+ * the attackers move on their own and the defenders defend themselved accordingly
+ * the game ends if the castle health == 0 or all attackers die
+ * if the community loses then they get a soul bound token indicating a loss
+ * if they win they get a win SBT and their creator may get something 👀
+ */
+contract Engine is EternalGlory, Owned {
     /// @dev emitted when asset dies
     event AssetDead(uint256 indexed _x, uint256 indexed _y);
     /// @dev emitted when asset inflicts damage
@@ -34,14 +43,12 @@ contract Board {
     /// @dev emiited when an attacker moves
     event AttackerMove(uint256 _x, uint256 _y, uint256 newX, uint256 newY);
 
-    /// @dev true if game has started
-    bool public start;
-    /// @dev number of times the action function has been called
-    uint256 public ticks;
-    /// @dev battle pass address associated with this board
-    address public pass;
-    /// @dev x->y->Asset info
-    mapping(uint256 => mapping(uint256 => Asset)) public asset;
+    /// @dev grid size of the board
+    uint256 public constant X = 14;
+    uint256 public constant Y = 14;
+    /// @dev castle is put in the middle
+    uint256 public constant CASTLE_X = (X + 1) / 2;
+    uint256 public constant CASTLE_Y = (Y + 1) / 2;
 
     /// @dev uses for actions that can only be undertaken when game is either ongoing or stoppped
     /// @param _start true if need game to have already started, false otherwise
@@ -51,10 +58,35 @@ contract Board {
     }
 
     /// @dev add castle in the middle
-    constructor(address _pass) {
+    /// @param uri SBT uri
+    constructor(string memory uri) EternalGlory(uri) Owned(msg.sender) {
         asset[CASTLE_X][CASTLE_Y] = Asset(address(this), CASTLE_HEALTH, CASTLE_ID);
-        pass = _pass;
     }
+
+    /*//////////////////////////////////////////////////////////////////////
+                                ADMIN 
+    //////////////////////////////////////////////////////////////////////*/
+
+    /// @dev battle pass address associated with this board
+    address public battlePass;
+    /// @dev true if game has started
+    bool public start;
+
+    /// @notice toggle game start/stop
+    /// @dev only admin can toggle game
+    /// @param toggle set to true to start game, false otherwise
+    function toggleGame(bool toggle) external onlyOwner {
+        start = toggle;
+    }
+
+    /// @notice set pass address
+    function setPass(address _battlePass) external onlyOwner gameStatus(false) {
+        battlePass = _battlePass;
+    }
+
+    /*//////////////////////////////////////////////////////////////////////
+                                UTILS
+    //////////////////////////////////////////////////////////////////////*/
 
     /**
      * @notice check if a given asset is a defense unit or an attacking unit
@@ -62,9 +94,9 @@ contract Board {
      * @return true if defender, false if attacker
      */
     function checkType(uint256 assetId) public pure returns (bool) {
-        if (assetId >= DEFENDER_STARTING_ID) {
+        if (assetId >= DEFENDER_STARTING_ID && assetId < ATTACKER_STARTING_ID) {
             return true;
-        } else if (assetId >= ATTACKER_STARTING_ID) {
+        } else if (assetId >= ATTACKER_STARTING_ID && assetId < INVALID_STARTING_ID) {
             return false;
         } else {
             revert InvalidId(assetId);
@@ -91,6 +123,32 @@ contract Board {
             require(!onBoundary, "invalid defender location");
         } else {
             require(onBoundary, "invalid attacker location");
+        }
+    }
+
+    /**
+     * @notice return health for asset id
+     * @dev revert if id is invalid
+     * @param assetId asset id of asset to check
+     * @return health of asset
+     */
+    function getHealthForAsset(uint256 assetId) public pure returns (uint256 health) {
+        if (assetId == TURRET_ID) {
+            health = TURRET_HEALTH;
+        } else if (assetId == BOMBER_ID) {
+            health = BOMBER_HEALTH;
+        } else if (assetId == GENERATOR_ID) {
+            health = GENERATOR_HEALTH;
+        } else if (assetId == WALL_ID) {
+            health = WALL_HEALTH;
+        } else if (assetId == MELEE_ID) {
+            health = MELEE_HEALTH;
+        } else if (assetId == RANGED_ID) {
+            health = RANGED_HEALTH;
+        } else if (assetId == EXPLOSIVE_ID) {
+            health = EXPLOSIVE_HEALTH;
+        } else {
+            revert InvalidId(assetId);
         }
     }
 
@@ -212,6 +270,15 @@ contract Board {
         }
     }
 
+    /*//////////////////////////////////////////////////////////////////////
+                                PLACE/UNPLACE
+    //////////////////////////////////////////////////////////////////////*/
+
+    /// @dev x->y->Asset info
+    mapping(uint256 => mapping(uint256 => Asset)) public asset;
+    /// @dev updated when attackers are added or they die
+    uint256 public numberOfAttackers;
+
     /**
      * @notice place asset at _x,_y
      * @dev has to abide by game rules and owner needs to own id
@@ -226,10 +293,10 @@ contract Board {
         uint256 _y,
         address owner,
         uint256 id
-    ) external gameStatus(false) {
+    ) external gameStatus(false) onlyOwner {
         bool isDefender = checkType(id);
         if (!isDefender) numberOfAttackers++;
-        burn(owner, id, 1);
+        IRewards(battlePass).burn(owner, id, 1);
         checkPlaceConditions(_x, _y, isDefender);
         uint256 health = getHealthForAsset(id);
         asset[_x][_y] = Asset(owner, health, id);
@@ -251,19 +318,16 @@ contract Board {
         Asset memory _asset = asset[_x][_y];
         bool isDefender = checkType(_asset.id);
         if (!isDefender) numberOfAttackers--;
-        mint(owner, _asset.health, 1, "");
+        IRewards(battlePass).mint(owner, _asset.health, 1);
         delete asset[_x][_y];
     }
 
-    /// @notice toggle game start/stop
-    /// @dev only admin can toggle game
-    /// @param toggle set to true to start game, false otherwise
-    function toggleGame(bool toggle) external {
-        start = toggle;
-    }
+    /*//////////////////////////////////////////////////////////////////////
+                                FUN
+    //////////////////////////////////////////////////////////////////////*/
 
-    // Keeper functions
-    // -------------------------------------------------
+    /// @dev number of times the action function has been called
+    uint256 public ticks;
 
     /**
      * @notice keeper will call this function for all _x,_y on board
@@ -290,6 +354,8 @@ contract Board {
                 if (ticks % BOMBER_FIRE_TICKS == 0) {
                     defendBomber(_x, _y);
                 }
+                ticks++;
+                return;
             }
         } else {
             if (assetId == EXPLOSIVE_ID) {
@@ -405,32 +471,102 @@ contract Board {
         }
         if (defenderExists) return;
 
-        uint256 newX;
-        uint256 newY;
-        if (_x > CASTLE_X && _y > CASTLE_Y) {
-            newX = _x - 1;
-            newY = _y - 1;
-        } else if (_x < CASTLE_X && _y < CASTLE_Y) {
-            newX = _x + 1;
-            newY = _y + 1;
-        } else if (_y > CASTLE_Y) {
-            newX = _x;
-            newY = _y - 1;
-        } else if (_y < CASTLE_Y) {
-            newX = _x;
-            newY = _y + 1;
-        } else if (_x > CASTLE_X) {
-            newX = _x - 1;
-            newY = _y;
-        } else if (_x < CASTLE_X) {
-            newX = _x + 1;
-            newY = _y;
+        uint256 newX = _x;
+        uint256 newY = _y;
+        // each attacker can only move once per tick
+        (uint256 xRange, uint256 yRange) = adjustInRange(_x, _y, 1);
+        uint256 xDistance = (_x << 2) + (CASTLE_X << 2) - (2 * _x * CASTLE_X);
+        uint256 yDistance = (_y << 2) + (Y << 2) - (2 * _y * Y);
+        uint256 distance = sqrt(xDistance + yDistance);
+
+        //if there is someone else in moving range skip that location
+        //if distnace to centre from a point is more than the current distance, skip that
+        //if distance is less then move there
+        for (uint256 a = _x; a <= xRange; a++) {
+            for (uint256 b = _y; b <= yRange; b++) {
+                //save computation
+                if (a == _x && b == _y) continue;
+                // dont go there if there is an attacker there already
+                if (asset[a][b].health != 0) continue;
+                uint256 dist = sqrt(
+                    (a << 2) + (CASTLE_X << 2) - (2 * a * CASTLE_X) + (b << 2) + (Y << 2) - (2 * b * Y)
+                );
+                if (dist < distance) {
+                    newX = a;
+                    newY = b;
+                    distance = dist;
+                }
+            }
         }
-        //check if there is an asset there
-        //account for 2nd best, 3rd best position and so on
-        //since asset is dead at newX,newY, so is deleted
         asset[newX][newY] = _asset;
         delete asset[_x][_y];
         emit AttackerMove(_x, _y, newX, newY);
+    }
+
+    /**
+     * @dev Returns the square root of a number. If the number is not a perfect square, the value is rounded down.
+     * copied from OZ since I dont wanna use an  entire lib to use 1 function
+     * Inspired by Henry S. Warren, Jr.'s "Hacker's Delight" (Chapter 11).
+     */
+    function sqrt(uint256 a) internal pure returns (uint256) {
+        if (a == 0) {
+            return 0;
+        }
+
+        // For our first guess, we get the biggest power of 2 which is smaller than the square root of the target.
+        // We know that the "msb" (most significant bit) of our target number `a` is a power of 2 such that we have
+        // `msb(a) <= a < 2*msb(a)`.
+        // We also know that `k`, the position of the most significant bit, is such that `msb(a) = 2**k`.
+        // This gives `2**k < a <= 2**(k+1)` → `2**(k/2) <= sqrt(a) < 2 ** (k/2+1)`.
+        // Using an algorithm similar to the msb computation, we are able to compute `result = 2**(k/2)` which is a
+        // good first approximation of `sqrt(a)` with at least 1 correct bit.
+        uint256 result = 1;
+        uint256 x = a;
+        if (x >> 128 > 0) {
+            x >>= 128;
+            result <<= 64;
+        }
+        if (x >> 64 > 0) {
+            x >>= 64;
+            result <<= 32;
+        }
+        if (x >> 32 > 0) {
+            x >>= 32;
+            result <<= 16;
+        }
+        if (x >> 16 > 0) {
+            x >>= 16;
+            result <<= 8;
+        }
+        if (x >> 8 > 0) {
+            x >>= 8;
+            result <<= 4;
+        }
+        if (x >> 4 > 0) {
+            x >>= 4;
+            result <<= 2;
+        }
+        if (x >> 2 > 0) {
+            result <<= 1;
+        }
+
+        // At this point `result` is an estimation with one bit of precision. We know the true value is a uint128,
+        // since it is the square root of a uint256. Newton's method converges quadratically (precision doubles at
+        // every iteration). We thus need at most 7 iteration to turn our partial result with one bit of precision
+        // into the expected uint128 result.
+        unchecked {
+            result = (result + a / result) >> 1;
+            result = (result + a / result) >> 1;
+            result = (result + a / result) >> 1;
+            result = (result + a / result) >> 1;
+            result = (result + a / result) >> 1;
+            result = (result + a / result) >> 1;
+            result = (result + a / result) >> 1;
+            return min(result, a / result);
+        }
+    }
+
+    function min(uint256 a, uint256 b) internal pure returns (uint256) {
+        return a < b ? a : b;
     }
 }
