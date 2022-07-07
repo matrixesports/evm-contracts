@@ -1,14 +1,30 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
-import "./Assets.sol";
+import "./defenders/Defender.sol";
+import "./attackers/Attacker.sol";
+import "solmate/auth/Owned.sol";
 
-/// @notice
-/// @author rayquaza7, manasabir
-contract Board is Assets {
-    /// @dev thrown when the id trying to add is invalid
-    error InvalidId(uint256 id);
+/// @dev health determines if slot is empty or not
+struct Asset {
+    address owner;
+    uint256 health;
+    uint256 id;
+}
 
+/// @dev thrown when the id trying to add is invalid
+error InvalidId(uint256 id);
+
+/// @dev grid size of the board
+uint256 constant X = 14;
+uint256 constant Y = 14;
+/// @dev castle is put in the middle
+uint256 constant CASTLE_X = (X + 1) / 2;
+uint256 constant CASTLE_Y = (Y + 1) / 2;
+
+/// @notice each community gets their own copy of this contract that they own
+/// @author rayquaza7
+contract Board {
     /// @dev emitted when asset dies
     event AssetDead(uint256 indexed _x, uint256 indexed _y);
     /// @dev emitted when asset inflicts damage
@@ -18,12 +34,12 @@ contract Board is Assets {
     /// @dev emiited when an attacker moves
     event AttackerMove(uint256 _x, uint256 _y, uint256 newX, uint256 newY);
 
-    /// @dev number of times the action function has been called
-    uint256 public countTicks;
-    /// @dev updated when attackers are added or they die
-    uint256 public numberOfAttackers;
     /// @dev true if game has started
     bool public start;
+    /// @dev number of times the action function has been called
+    uint256 public ticks;
+    /// @dev battle pass address associated with this board
+    address public pass;
     /// @dev x->y->Asset info
     mapping(uint256 => mapping(uint256 => Asset)) public asset;
 
@@ -35,23 +51,24 @@ contract Board is Assets {
     }
 
     /// @dev add castle in the middle
-    constructor(
-        string memory uri,
-        address pass,
-        address recipe
-    ) Assets(uri, pass, recipe) {
+    constructor(address _pass) {
         asset[CASTLE_X][CASTLE_Y] = Asset(address(this), CASTLE_HEALTH, CASTLE_ID);
+        pass = _pass;
     }
 
     /**
      * @notice check if a given asset is a defense unit or an attacking unit
-     * @dev ids 1-10 reserved for defenders, 11-20 for attackers, castle is 0;
-     * for simplicity castle is assumned to be a defensive unit
      * @param assetId asset id of asset to check
      * @return true if defender, false if attacker
      */
     function checkType(uint256 assetId) public pure returns (bool) {
-        return assetId <= 10;
+        if (assetId >= DEFENDER_STARTING_ID) {
+            return true;
+        } else if (assetId >= ATTACKER_STARTING_ID) {
+            return false;
+        } else {
+            revert InvalidId(assetId);
+        }
     }
 
     /**
@@ -74,32 +91,6 @@ contract Board is Assets {
             require(!onBoundary, "invalid defender location");
         } else {
             require(onBoundary, "invalid attacker location");
-        }
-    }
-
-    /**
-     * @notice return health for asset id
-     * @dev revert if id is invalid
-     * @param assetId asset id of asset to check
-     * @return health of asset
-     */
-    function getHealthForAsset(uint256 assetId) public pure returns (uint256 health) {
-        if (assetId == TURRET_ID) {
-            health = TURRET_HEALTH;
-        } else if (assetId == BOMBER_ID) {
-            health = BOMBER_HEALTH;
-        } else if (assetId == GENERATOR_ID) {
-            health = GENERATOR_HEALTH;
-        } else if (assetId == WALL_ID) {
-            health = WALL_HEALTH;
-        } else if (assetId == MELEE_ID) {
-            health = MELEE_HEALTH;
-        } else if (assetId == RANGED_ID) {
-            health = RANGED_HEALTH;
-        } else if (assetId == EXPLOSIVE_ID) {
-            health = EXPLOSIVE_HEALTH;
-        } else {
-            revert InvalidId(assetId);
         }
     }
 
@@ -235,7 +226,7 @@ contract Board is Assets {
         uint256 _y,
         address owner,
         uint256 id
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) gameStatus(false) {
+    ) external gameStatus(false) {
         bool isDefender = checkType(id);
         if (!isDefender) numberOfAttackers++;
         burn(owner, id, 1);
@@ -256,7 +247,7 @@ contract Board is Assets {
         uint256 _x,
         uint256 _y,
         address owner
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) gameStatus(false) {
+    ) external gameStatus(false) {
         Asset memory _asset = asset[_x][_y];
         bool isDefender = checkType(_asset.id);
         if (!isDefender) numberOfAttackers--;
@@ -267,7 +258,7 @@ contract Board is Assets {
     /// @notice toggle game start/stop
     /// @dev only admin can toggle game
     /// @param toggle set to true to start game, false otherwise
-    function toggleGame(bool toggle) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function toggleGame(bool toggle) external {
         start = toggle;
     }
 
@@ -279,11 +270,11 @@ contract Board is Assets {
      * @dev checks if unit has health > 0, if yes that means its dead or empty
      * call action function for corresponding asset at that location;
      * all action functions then call the update function
-     * add countTicks
+     * add ticks
      * castle does not defend itself
      * for defender actions, a generator must be around
      */
-    function action(uint256 _x, uint256 _y) external onlyRole(DEFAULT_ADMIN_ROLE) gameStatus(true) {
+    function action(uint256 _x, uint256 _y) external gameStatus(true) {
         Asset memory _asset = asset[_x][_y];
         uint256 assetId = _asset.id;
         bool isDefender = checkType(assetId);
@@ -296,13 +287,13 @@ contract Board is Assets {
                 range = TURRET_RANGE;
                 damage = TURRET_DAMAGE;
             } else if (assetId == BOMBER_ID) {
-                if (countTicks % BOMBER_FIRE_TICKS == 0) {
+                if (ticks % BOMBER_FIRE_TICKS == 0) {
                     defendBomber(_x, _y);
                 }
             }
         } else {
             if (assetId == EXPLOSIVE_ID) {
-                if (countTicks % EXPLOSIVE_FIRE_TICKS == 0) {
+                if (ticks % EXPLOSIVE_FIRE_TICKS == 0) {
                     range = EXPLOSIVE_RANGE;
                     damage = EXPLOSIVE_DAMAGE;
                 }
@@ -318,7 +309,7 @@ contract Board is Assets {
         if (exists) {
             update(_xEnemy, _yEnemy, TURRET_DAMAGE, _x, _y);
         }
-        countTicks++;
+        ticks++;
     }
 
     /// @dev execute bomber's defense action
@@ -401,13 +392,13 @@ contract Board is Assets {
      * @param _x x coordinate
      * @param _y y coordinate
      */
-    function move(uint256 _x, uint256 _y) external onlyRole(DEFAULT_ADMIN_ROLE) gameStatus(true) {
+    function move(uint256 _x, uint256 _y) external gameStatus(true) {
         Asset memory _asset = asset[_x][_y];
         bool defenderExists;
         if (_asset.health == 0 || checkType(_asset.id)) return;
-        if (_asset.id == MELEE_ID && countTicks % MELEE_MOVE_TICKS == 0) {
+        if (_asset.id == MELEE_ID && ticks % MELEE_MOVE_TICKS == 0) {
             (, , defenderExists) = find(_x, _y, MELEE_RANGE, false);
-        } else if (_asset.id == RANGED_ID && countTicks % RANGED_MOVE_TICKS == 0) {
+        } else if (_asset.id == RANGED_ID && ticks % RANGED_MOVE_TICKS == 0) {
             (, , defenderExists) = find(_x, _y, RANGED_RANGE, false);
         } else if (_asset.id == EXPLOSIVE_ID) {
             (, , defenderExists) = find(_x, _y, EXPLOSIVE_RANGE, false);

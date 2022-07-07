@@ -4,7 +4,7 @@ pragma solidity >=0.8.0;
 import "solmate/auth/Owned.sol";
 import "solmate/tokens/ERC20.sol";
 
-/// @dev used when delagator tries to delegate more than they have
+/// @dev used when delagator tries to delegate more than they have or undelegate more than they delegated
 error InsufficientBalance(address delegator, uint256 owned, uint256 delegatedAmount);
 
 /// @notice contract for erc20 token specific to the creator with delegation

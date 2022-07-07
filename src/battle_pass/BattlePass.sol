@@ -48,8 +48,6 @@ error RewardAlreadyClaimed(uint256 seasonId, address user);
  * Tracks user progress across each level and season
  * Allows for giving out rewards at each level
  * Rewards can be NFTs/Tokens/Lootboxes
- * Allows for delegation of tokens to other users in a creator's community
- *
  */
 contract BattlePass is Rewards {
     /// @dev emitted when a new season is created
@@ -64,7 +62,12 @@ contract BattlePass is Rewards {
     /// @dev user->seasonId->User, store user info for each season
     mapping(address => mapping(uint256 => User)) public userInfo;
 
-    constructor(string memory _uri, address _crafting) Rewards(_uri, _crafting) {}
+    constructor(
+        string memory _uri,
+        address crafting,
+        address game,
+        address creatorTokenCtr
+    ) Rewards(_uri, crafting, game, creatorTokenCtr) {}
 
     /*//////////////////////////////////////////////////////////////////////
                                 ADMIN 
