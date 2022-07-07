@@ -75,19 +75,19 @@ Each creator that we onboard gets their own `BattlePass`, `CreatorToken` and `Pa
 ---
 
 <ol type="i">
-<li> <p style="color:#FFBF00;"> yarn all </p> 
-<li> <p> create .env file based on <span style="color:#FFBF00;">.sampleenv</span> </p>
+<li> <code>yarn all</code>. </p> 
+<li> <p> create .env file based on <code>.sampleenv</code>. </p>
 </ol>
 
 ## Development
 
 ---
-<ol type="i">
+<ul type="-">
 <li> <p> This project uses <a href="https://getfoundry.sh">Foundry</a>. See the <a href="https://book.getfoundry.sh/getting-started/installation.html">book</a> for instructions on how to install and use Foundry. </p> 
-<li> <p> <span style="color:#FFBF00;">main</span> branch is for production only. Changes are merged if all FE integrations and contracts tests pass. </p>
-<li> <p> Use feature branches for all other changes </p>
-<li> <p> Refer to <span style="color:#FFBF00;">pull_request_template</span> when opening a PR </p>
-</ol>
+<li> <p> <code>main</code> branch is for production only. Changes are merged if all FE integrations and contracts tests pass. </p>
+<li> <p> Use feature branches for all other changes. </p>
+<li> <p> Refer to <code>pull_request_template</code> when opening a PR. </p>
+</ul>
 
 ## Things to be careful of
 
