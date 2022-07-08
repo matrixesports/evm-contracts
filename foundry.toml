@@ -2,7 +2,7 @@
 # See more config options at: https://github.com/gakonst/foundry/tree/master/config
 
 [default]
-verbosity = 3
+verbosity = 4
 fuzz_runs = 256
 optimizer = true
 optimizer_runs = 10000
