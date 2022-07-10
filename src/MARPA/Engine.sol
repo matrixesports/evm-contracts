@@ -3,7 +3,6 @@ pragma solidity >=0.8.0;
 
 import "./EternalGlory.sol";
 import "./AssetStats.sol";
-import "../RewardIDConstants.sol";
 import "../battle_pass/IRewards.sol";
 import {InvalidId} from "../battle_pass/Rewards.sol";
 import "solmate/auth/Owned.sol";
@@ -49,6 +48,18 @@ contract Engine is EternalGlory, Owned {
     /// @dev castle is put in the middle
     uint256 public constant CASTLE_X = (X + 1) / 2;
     uint256 public constant CASTLE_Y = (Y + 1) / 2;
+
+    uint256 public constant DEFENDER_STARTING_ID = 20_100;
+    uint256 public constant CASTLE_ID = 20_100;
+    uint256 public constant TURRET_ID = 20_101;
+    uint256 public constant WALL_ID = 20_102;
+    uint256 public constant GENERATOR_ID = 20_103;
+
+    uint256 public constant ATTACKER_STARTING_ID = 20_200;
+    uint256 public constant BOMBER_ID = 20_200;
+    uint256 public constant RANGED_ID = 20_201;
+    uint256 public constant MELEE_ID = 20_202;
+    uint256 public constant EXPLOSIVE_ID = 20_203;
 
     /// @dev uses for actions that can only be undertaken when game is either ongoing or stoppped
     /// @param _start true if need game to have already started, false otherwise
@@ -96,7 +107,7 @@ contract Engine is EternalGlory, Owned {
     function checkType(uint256 assetId) public pure returns (bool) {
         if (assetId >= DEFENDER_STARTING_ID && assetId < ATTACKER_STARTING_ID) {
             return true;
-        } else if (assetId >= ATTACKER_STARTING_ID && assetId < INVALID_STARTING_ID) {
+        } else if (assetId >= ATTACKER_STARTING_ID) {
             return false;
         } else {
             revert InvalidId(assetId);

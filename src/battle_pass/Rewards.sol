@@ -2,12 +2,12 @@
 pragma solidity >=0.8.0;
 
 import "../creator_token/ICreatorToken.sol";
-import "../RewardIDConstants.sol";
 import "solmate/auth/Owned.sol";
 import "solmate/tokens/ERC1155.sol";
 import "openzeppelin-contracts/contracts/utils/Strings.sol";
 
 /// @dev type of reward that can be given out
+/// DO NOT CHANGE ORDERING, web3 service depends on this
 enum RewardType {
     PREMIUM_PASS,
     CREATOR_TOKEN,
@@ -39,6 +39,25 @@ struct Redemption {
  * ids.length == qtys.length
  * if any of the ids is CREATOR_TOKEN_ID then call the creator token contract
  */
+/**
+ * @dev all reward IDS that are given out in a battle pass
+ * battle pass gives out the following rewards:
+ * Premium passes: ids 1-999 reserved for issuing premium passes for new seasons.
+ * seasons x needs to mint id x in order to give user a premium pass
+ * Creator Token: NOT minted by the Battle Pass, it is minted by the creator token contract
+ * however, a Battle Pass is allowed to give creator tokens as a reward.
+ * So, the creator token whitelists the pass contract and when you want to give out the tokens
+ * you specify id CREATOR_TOKEN_ID so that the contract knows that it has to call the token contract
+ * Lootbox: ids 1001-9999 reserved for creating new lootboxes, a battle pass can give out new lootboxes as
+ * a reward.
+ * Redeemable: ids 10,000-19999 reserved for redeemable items. These are items that require manual intervention
+ * by a creator
+ * Special: ids 20000-29999 reserved for default items like nfts, game items, one off tokens, etc.
+ * Currently defined special items:
+ * - ids 20,100-20199 reserved for MTX game defender items
+ * - ids 20,200-20299 reserved for MTX game attacker items
+ * anything bove 30,000 is considered invalid to prevent mistakes
+ */
 struct LootboxOption {
     uint256[2] rarityRange;
     uint256[] ids;
@@ -69,6 +88,13 @@ abstract contract Rewards is ERC1155, Owned {
     mapping(address => bool) public whitelisted;
     /// @dev creator token contract address
     address public creatorTokenCtr;
+
+    uint256 public constant PREMIUM_PASS_STARTING_ID = 1;
+    uint256 public constant CREATOR_TOKEN_ID = 1_000;
+    uint256 public constant LOOTBOX_STARTING_ID = 1_001;
+    uint256 public constant REDEEMABLE_STARTING_ID = 10_000;
+    uint256 public constant SPECIAL_STARTING_ID = 20_000;
+    uint256 public constant INVALID_STARTING_ID = 30_000;
 
     /// @notice whitelist game, crafting and msg.sender
     constructor(

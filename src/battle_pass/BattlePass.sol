@@ -7,13 +7,15 @@ import "./Rewards.sol";
  * if you want to give out multiple rewards at a level then have the id correspond to a lootbox
  * xpToCompleteLevel: xp required to go from level x->x+1;
  * if info is for the last level then xpToCompleteLevel must be 0
- * freeReward: free reward id to give at level x
- * premiumReward: premium reward id to give at level x
+ * freeRewardId: free reward id to give at level x
+ * premiumRewardId: premium reward id to give at level x
  */
 struct LevelInfo {
     uint256 xpToCompleteLevel;
-    uint256 freeReward;
-    uint256 premiumReward;
+    uint256 freeRewardId;
+    uint256 freeRewardQty;
+    uint256 premiumRewardId;
+    uint256 premiumRewardQty;
 }
 
 /** @dev Info stored on each user for each season
@@ -75,6 +77,7 @@ contract BattlePass is Rewards {
 
     /// @notice give xp to a user upon completion of quests
     /// @dev only owner can give xp
+    /// FOR NOW LET FE TAKE CARE OF XP OVERFLOW
     /// @param _seasonId season id for which xp is to be given
     /// @param xp how much xp to give
     /// @param user user to give xp to
@@ -113,8 +116,8 @@ contract BattlePass is Rewards {
         if (levelInfo[lastLevel].xpToCompleteLevel != 0) revert IncorrectSeasonDetails(msg.sender);
         for (uint256 x; x <= lastLevel; x++) {
             seasonInfo[seasonId][x].xpToCompleteLevel = levelInfo[x].xpToCompleteLevel;
-            addReward(seasonId, x, false, levelInfo[x].freeReward);
-            addReward(seasonId, x, true, levelInfo[x].premiumReward);
+            addReward(seasonId, x, false, levelInfo[x].freeRewardId, levelInfo[x].freeRewardQty);
+            addReward(seasonId, x, true, levelInfo[x].premiumRewardId, levelInfo[x].premiumRewardQty);
         }
         emit NewSeason(seasonId);
         return seasonId;
@@ -154,14 +157,18 @@ contract BattlePass is Rewards {
             if (isUserPremium(user, _seasonId)) {
                 if (!tempUserInfo.claimedPremiumPass) {
                     tempUserInfo.claimedPremiumPass = true;
-                    _burn(user, _seasonId, 1);
+                    burn(user, _seasonId, 1);
                 }
-                _mint(user, seasonInfo[_seasonId][_level].premiumReward, 1, "");
+                mint(
+                    user,
+                    seasonInfo[_seasonId][_level].premiumRewardId,
+                    seasonInfo[_seasonId][_level].premiumRewardQty
+                );
             } else {
                 revert NeedPremiumPassToClaimPremiumReward(_seasonId, user);
             }
         } else {
-            _mint(user, seasonInfo[_seasonId][_level].freeReward, 1, "");
+            mint(user, seasonInfo[_seasonId][_level].freeRewardId, seasonInfo[_seasonId][_level].freeRewardQty);
         }
     }
 
@@ -171,16 +178,20 @@ contract BattlePass is Rewards {
     /// @param _level level for which the reward needs to be changed
     /// @param premium true if adding/updating premium reward
     /// @param id new reward id
+    /// @param qty new reward qty
     function addReward(
         uint256 _seasonId,
         uint256 _level,
         bool premium,
-        uint256 id
+        uint256 id,
+        uint256 qty
     ) public onlyOwner {
         if (premium) {
-            seasonInfo[_seasonId][_level].premiumReward = id;
+            seasonInfo[_seasonId][_level].premiumRewardId = id;
+            seasonInfo[_seasonId][_level].premiumRewardQty = qty;
         } else {
-            seasonInfo[_seasonId][_level].freeReward = id;
+            seasonInfo[_seasonId][_level].freeRewardId = id;
+            seasonInfo[_seasonId][_level].freeRewardQty = qty;
         }
     }
 
@@ -203,18 +214,27 @@ contract BattlePass is Rewards {
     }
 
     /// @notice calculate level of a user for a given season
-    /// @dev break when xpToCompleteLevel is 0 since that means that the user is at last level
     /// @param user user address to calculate the level for
     /// @param _seasonId season for which level is to be calculated
     /// @return userLevel current user level
     function level(address user, uint256 _seasonId) public view returns (uint256 userLevel) {
-        uint256 cumulativeXP = seasonInfo[_seasonId][userLevel].xpToCompleteLevel;
+        uint256 maxLevelInSeason = getMaxLevel(_seasonId);
         uint256 userXp = userInfo[user][_seasonId].xp;
-        while (cumulativeXP <= userXp) {
+        uint256 cumulativeXP;
+        for (uint256 x; x < maxLevelInSeason; x++) {
+            cumulativeXP += seasonInfo[_seasonId][x].xpToCompleteLevel;
+            if (cumulativeXP > userXp) break;
             userLevel++;
-            uint256 xpToNextLevel = seasonInfo[_seasonId][userLevel].xpToCompleteLevel;
-            if (xpToNextLevel == 0) break;
-            cumulativeXP += xpToNextLevel;
+        }
+    }
+
+    /// @notice get max level for a given season id
+    /// @dev max level is reached when xpToCompleteLevel == 0
+    function getMaxLevel(uint256 _seasonId) public view returns (uint256 maxLevel) {
+        uint256 xpToCompleteLevel = seasonInfo[_seasonId][maxLevel].xpToCompleteLevel;
+        while (xpToCompleteLevel != 0) {
+            maxLevel++;
+            xpToCompleteLevel = seasonInfo[_seasonId][maxLevel].xpToCompleteLevel;
         }
     }
 

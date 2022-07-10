@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
-import "solmate/tokens/ERC721.sol";
 import "solmate/auth/Owned.sol";
 import "solmate/utils/ReentrancyGuard.sol";
 import "openzeppelin-contracts/contracts/utils/Strings.sol";
+import "openzeppelin-contracts/contracts/token/ERC721/ERC721.sol";
 
 contract SoupcansNFT is ERC721, Owned, ReentrancyGuard {
+    /// @dev of the form ipfs://wefewewr/
     string public baseTokenURI;
     /// @dev true id mint has started
     bool public mintStart;
@@ -59,15 +60,14 @@ contract SoupcansNFT is ERC721, Owned, ReentrancyGuard {
         require(success, "TRY DIFFERENT ADDRESS");
     }
 
+    function tokenURI(uint256 tokenId) public view override returns (string memory) {
+        _requireMinted(tokenId);
+        return string.concat(baseTokenURI, Strings.toString(tokenId), ".json");
+    }
+
     /*//////////////////////////////////////////////////////////////////////
                                 MINT
     //////////////////////////////////////////////////////////////////////*/
-
-    /// @notice return uri for an id
-    /// @return string in format ipfs://<uri>/id.json
-    function tokenURI(uint256 id) public view override returns (string memory) {
-        return string.concat("ipfs://", baseTokenURI, "/", Strings.toString(id), ".json");
-    }
 
     /// @notice mint called by msg.sender
     /// @dev mint must have started
