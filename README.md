@@ -79,6 +79,7 @@ Each creator that we onboard gets their own `BattlePass`, `CreatorToken` and `Pa
   - solmate, forge-std works fine with forge update
   - need to keep an eye on oz, master branch is dev branch, works on release branches, current version installed is v4.6.0. https://github.com/foundry-rs/foundry/issues/401
 - erc20 token takes decimals into account, so to give nice whole numbers, account for that
+- contracts should not allow bad inputs.if this is done properly then the ouput/queries by FE will not have to be checked.
 
 ## Development
 
