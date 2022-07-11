@@ -2,7 +2,7 @@
 pragma solidity >=0.8.0;
 
 import "forge-std/Test.sol";
-import "../src/soupcans/SoupcansNFT.sol";
+import "../src/misc/SoupcansNFT.sol";
 
 contract SoupcansNFTTest is Test {
     SoupcansNFT token;

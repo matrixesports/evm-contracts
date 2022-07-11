@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
-import "./battle_pass/IRewards.sol";
+import "./battle-pass/IRewards.sol";
 import "solmate/auth/Owned.sol";
 
 /// @dev used when trying to craft a recipe thats not active

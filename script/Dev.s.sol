@@ -2,8 +2,8 @@
 pragma solidity >=0.8.0;
 
 import "forge-std/Script.sol";
-import "../src/soupcans/SoupcansNFT.sol";
-import "../src/battle_pass/BattlePass.sol";
+import "../src/misc/SoupcansNFT.sol";
+import "../src/battle-pass/BattlePass.sol";
 
 contract DevScript is Script {
     SoupcansNFT token;
@@ -11,10 +11,9 @@ contract DevScript is Script {
 
     address crafting;
 
-
     /// @dev need new token, game, existing recipe
     function newCreator() public {
-        pass = new BattlePass()
+        // pass = new BattlePass();
     }
 
     function dev() public {

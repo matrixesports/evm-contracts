@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0;
 
-import "../creator_token/ICreatorToken.sol";
+import "./ICreatorToken.sol";
 import "solmate/auth/Owned.sol";
 import "solmate/tokens/ERC1155.sol";
 import "openzeppelin-contracts/contracts/utils/Strings.sol";
