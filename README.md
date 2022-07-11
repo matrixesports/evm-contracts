@@ -27,6 +27,68 @@
 3. use feature branches for all other changes
 4. refer to `pull_request_template` when opening a PR
 
+## Contracts
+
+Each creator that we onboard gets their own `BattlePass`, `CreatorToken` and `Pathfinder` contract. Most functions have `onlyOwner` modifier since we'll be paying gas fees for the user and want to make the ux seamless.
+
+### Crafting
+
+---
+
+- Allows a user to burn owned tokens and get new tokens in return based on a 'recipe'. So it can be said that a user `crafts` items based on `recipes`.
+- A recipe defines what tokens, ids and quantities will be burned and what new tokens will be minted in return.
+- Has minting rights over every `BattlePass` contract.
+- For now, we only allows for recipes to be based on our deployed contracts. All items are a part of a creator's Battle Pass contracts.
+- Users earn rewards in the BattlePass and use those items to craft new items.
+- Only one deployed for the entire ecosystem.
+  - `matic`:
+
+### BattlePass
+
+---
+
+- 1 contract per creator.
+- Similar to the mechanism that tracks xp and gives rewards in games.
+- Responsibilities: store info on each level, track user progress, mint rewards upon level completion, create multiple seasons.
+- Gives the game and crafting contract minting/burning priveleges.
+- Handles metadata for display and minting of the creator token since it may be a reward at a level.
+- Rewards can be of the following types:
+  - PREMIUM_PASS: Allows access to premium rewards if a user has a premium pass.
+  - CREATOR_TOKEN: Tokens specific to the creator the BattlePass is associated with.
+  - LOOTBOX: Like a surprise box. Gives one set of rewards out of many based on predefined probabilities.
+  - REDEEMABLE: Rewards that require manual intervention by creators irl.
+  - SPECIAL: One off NFT's, in-game assets, etc.
+
+### CreatorToken
+
+---
+
+- ERC20 token with delegation. The BattlePass contract mints this.
+
+### MARPA
+
+---
+
+- stands for Matrix Advanced Research Projects Agency😤
+
+### Pathfinder
+
+---
+
+- Clash of clans like game.
+- Each creator community gets their own village with the goal of protecting their Castle in the middle of the village.
+- They complete quests/challenges to get rewards that include game charecters like different kinds of Defenders.
+- A player who wins a Defender, for ex a Bomber, then talks and coordinates with other members of the community to tactically place it on the map.
+- Players can place/unplace their characters before the deadline. After the deadline the attack begins. Matrix places its attackers on the boundary, the game is started and all further actions happen autonomously. The attackers move on their own, the defenders protect themselves on their own. Progression happens by using a keeper service to execute the action and move functions every block.
+- If the community wins then their creator gets rewarded.
+- A Soul Bound Token representing win/lose is minted to the community after the game ends. Its supposed to act like a Badge of Honor or a Badge of Shame.
+- The community can change the skins on their Defenders by passing governance proposals. We use a modified version of [DPD](https://intrago.xyz/) for it.
+- In V2 we'll allow p2p fighting where different communities can attack each other.
+
+## Things that the contracts allow us to do:
+
+[add]
+
 ## Repo Structure heavily inspired by:
 
 ---

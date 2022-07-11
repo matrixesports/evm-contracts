@@ -11,12 +11,9 @@ error IncorrectRecipeDetails();
 
 /**
  * @dev ingredients for a recipe
- * tokens: list of addresses to call
+ * tokens: list of addresses to add
  * ids: list of ids
  * qtys: list of qtys
- * For now, we only create recipes based on items we have deployed
- * all items are a part of a creator's Battle Pass contract
- * therefore token addresses will only comprise of Battle Pass addresses for diff contracts
  */
 struct Ingredients {
     address[] tokens;
@@ -24,20 +21,18 @@ struct Ingredients {
     uint256[] qtys;
 }
 
-/** 
-@notice a recipe is just a list of input and output tokens
-a user that has all the input tokens required by a recipe can 'craft' new items
-for ex: there exists a recipe that takes input token X and gives output token Y
-- user wants item Y and has item X
-- they 'craft' the recipe, i.e., their X token is burned and Y token is minted to them
-*/
-
-contract Recipe is Owned {
+/// @notice Allows a user to burn owned pre defined tokens for new ones
+/// @author rayquaza7
+contract Crafting is Owned {
     /// @dev emitted when new recipe is created
-    event NewRecipe(uint256 indexed recipeId);
+    event NewRecipe(uint256 indexed recipeId, uint256 indexed creatorId);
+    /// @dev emitted when item is crafted
+    event Crafted(uint256 indexed recipeId, address indexed user);
 
     /// @dev current number of recipes created
     uint256 public recipeId;
+    /// @dev creatorId->list of recipes
+    mapping(uint256 => uint256[]) public creatorRecipes;
     /// @dev recipe id->input ingredients
     mapping(uint256 => Ingredients) internal inputIngredients;
     /// @dev recipe id->output ingredients
@@ -50,13 +45,18 @@ contract Recipe is Owned {
     /**
      * @notice create a new recipe
      * @dev assumes that the ids you are adding are valid based on the spec in BattlePass.sol
-     * assume person creating the recipe knows what they are doing
      * will revert if length of ids is not equal to length of ids and tokens
+     * assume that all ids are valid
      * @param input ingredients
      * @param output ingredients
+     * @param creatorId creator the recipe belongs to
      * @return recipe id
      */
-    function addRecipe(Ingredients calldata input, Ingredients calldata output) external onlyOwner returns (uint256) {
+    function addRecipe(
+        Ingredients calldata input,
+        Ingredients calldata output,
+        uint256 creatorId
+    ) external onlyOwner returns (uint256) {
         if (
             input.tokens.length == input.ids.length &&
             input.ids.length == input.qtys.length &&
@@ -69,10 +69,11 @@ contract Recipe is Owned {
         unchecked {
             recipeId++;
         }
+        creatorRecipes[creatorId].push(recipeId);
         inputIngredients[recipeId] = input;
         outputIngredients[recipeId] = output;
         isActive[recipeId] = true;
-        emit NewRecipe(recipeId);
+        emit NewRecipe(recipeId, creatorId);
         return recipeId;
     }
 
@@ -94,6 +95,7 @@ contract Recipe is Owned {
         for (uint256 x; x < output.tokens.length; x++) {
             IRewards(output.tokens[x]).mint(user, output.ids[x], output.qtys[x]);
         }
+        emit Crafted(_recipeId, user);
     }
 
     /// @notice toggle recipe on or off

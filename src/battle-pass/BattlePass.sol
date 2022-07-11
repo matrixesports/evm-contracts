@@ -44,16 +44,9 @@ error RewardAlreadyClaimed(uint256 seasonId, address user);
 /**
  * @title A Battle Pass contract representing a Battle Pass as used in games.
  * @author rayquaza7
- * @notice
- * Each creator gets 1 unique contract
- * Allows for creating multiple seasons
- * Tracks user progress across each level and season
- * Allows for giving out rewards at each level
- * Rewards can be NFTs/Tokens/Lootboxes
  */
 contract BattlePass is Rewards {
     /// @dev emitted when a new season is created
-    /// @param seasonId new season id
     event NewSeason(uint256 indexed seasonId);
 
     /// @dev current season id
@@ -77,7 +70,6 @@ contract BattlePass is Rewards {
 
     /// @notice give xp to a user upon completion of quests
     /// @dev only owner can give xp
-    /// FOR NOW LET FE TAKE CARE OF XP OVERFLOW
     /// @param _seasonId season id for which xp is to be given
     /// @param xp how much xp to give
     /// @param user user to give xp to
@@ -130,7 +122,10 @@ contract BattlePass is Rewards {
      * revert if reward is already claimed
      * revert if trying to redeem premium reward and user is not eligible for it
      * if user has premium pass and it is their first time claiming a premium reward then
-     * burn 1 pass from their balance and set claimedPremiumPass to be true
+     * burn 1 pass from their balance and set claimedPremiumPass to be true. This is done
+     * to prevent the user from selling their premium pass after claiming a premium reward.
+     * A user can own multiple premium passes just like any other reward.
+     * It will NOT be burned if the user has already claimed a premium reward.
      * @param _seasonId for which the reward is to be claimed
      * @param user user address that is claiming the reward
      * @param _level the level for which reward is being claimed

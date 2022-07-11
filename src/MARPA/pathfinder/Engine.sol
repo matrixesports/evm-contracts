@@ -2,10 +2,10 @@
 pragma solidity >=0.8.0;
 
 import "./EternalGlory.sol";
+import "./DPDSkins.sol";
 import "./AssetStats.sol";
-import "../battle_pass/IRewards.sol";
-import {InvalidId} from "../battle_pass/Rewards.sol";
-import "solmate/auth/Owned.sol";
+import "../../battle-pass/IRewards.sol";
+import {InvalidId} from "../../battle-pass/Rewards.sol";
 
 /// @dev track info on asset placed on a grid location
 /// health determines if slot is empty or not
@@ -19,18 +19,6 @@ struct Asset {
  * @title MTX Game
  * @notice logic and state for the MTX Game
  * @author rayquaza7
- * @dev each community gets one copy of this contract
- * players win defenders by completing quests for their creator in the Battle Pass
- * they talk among themelves on discord, figure out where to put their defenders
- * they can place their defenders on the game map until the deadline
- * the goal is to protect their castle in the middle
- * after the deadline, placing/unplacing is freezed
- * MTX has attackers that it places randomly before the deadline as well
- * at the deadline the attack begins, all actions happen automatically afterwards
- * the attackers move on their own and the defenders defend themselved accordingly
- * the game ends if the castle health == 0 or all attackers die
- * if the community loses then they get a soul bound token indicating a loss
- * if they win they get a win SBT and their creator may get something 👀
  */
 contract Engine is EternalGlory, Owned {
     /// @dev emitted when asset dies
@@ -446,15 +434,17 @@ contract Engine is EternalGlory, Owned {
      * give SBT of win/lose
      * @return over true if over false otherwise
      */
-    function isGameOver() public returns (bool over) {
+    function isGameOver() public onlyOwner returns (bool over) {
         Asset memory _asset = asset[CASTLE_X][CASTLE_Y];
         if (_asset.health == 0) {
             over = true;
             start = false;
+            mintSBT(false);
             emit GameOver(false);
         } else if (numberOfAttackers == 0) {
             over = true;
             start = false;
+            mintSBT(true);
             emit GameOver(true);
         } else {}
     }
