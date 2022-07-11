@@ -9,7 +9,15 @@ contract DevScript is Script {
     SoupcansNFT token;
     BattlePass pass;
 
-    function run() public {
+    address crafting;
+
+
+    /// @dev need new token, game, existing recipe
+    function newCreator() public {
+        pass = new BattlePass()
+    }
+
+    function dev() public {
         vm.startBroadcast();
         //deploy
         // token = new SoupcansNFT("ipfs://QmXuU6EZhyYm2BBSZUxSzy4Lb3Xao2rMJDrsLYYGFW81Ke/");
