@@ -10,11 +10,9 @@
 
 ## Contracts
 
-Each creator that we onboard gets their own `BattlePass`, `CreatorToken` and `Pathfinder` contract. Most functions have `onlyOwner` modifier since we'll be paying gas fees for the user and want to make the ux seamless.
+<p> Each creator gets their own `BattlePass`, `CreatorToken`, and `Pathfinder` contracts. Most functions use the `onlyOwner` modifier because we pay the gas fees for the users to make the ux seamless. </p>
 
 ### Crafting
-
----
 
 - Allows a user to burn owned tokens and get new tokens in return based on a 'recipe'. So it can be said that a user `crafts` items based on `recipes`.
 - A recipe defines what tokens, ids and quantities will be burned and what new tokens will be minted in return.
