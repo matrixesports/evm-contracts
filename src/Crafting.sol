@@ -106,7 +106,7 @@ contract Crafting is Owned {
         emit Crafted(_recipeId, user);
     }
 
-    /// @notice toggled a recipe on or off
+    /// @notice toggles a recipe on or off
     function toggleRecipe(uint256 _recipeId, bool toggle) public onlyOwner {
         isActive[_recipeId] = toggle;
     }

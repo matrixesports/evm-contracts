@@ -55,7 +55,6 @@ error RewardAlreadyClaimed(uint256 seasonId, address user);
  */
 contract BattlePass is Rewards {
     /// @dev emitted when a new season is created
-    /// @param seasonId new seasonId
     event NewSeason(uint256 indexed seasonId);
 
     /// @dev current active seasonId
@@ -233,7 +232,7 @@ contract BattlePass is Rewards {
         }
     }
 
-    /// @notice get max level for a given season id
+    /// @notice gets the max level for a seasonId
     /// @dev max level is reached when xpToCompleteLevel == 0
     function getMaxLevel(uint256 _seasonId) public view returns (uint256 maxLevel) {
         uint256 xpToCompleteLevel = seasonInfo[_seasonId][maxLevel].xpToCompleteLevel;
@@ -243,7 +242,7 @@ contract BattlePass is Rewards {
         }
     }
 
-    /// @notice checks user claim status on a reward for a seasonId and at level
+    /// @notice checks a user claim status on a reward for a seasonId and at level
     /// @param user user address for which to check
     /// @param _seasonId seasonId for which to check
     /// @param _level level at which to check

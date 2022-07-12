@@ -261,7 +261,7 @@ abstract contract Rewards is ERC1155, Owned {
 
     /**
      * @notice creates a new lootbox
-     * @dev revert when:
+     * @dev reverts when:
      *      joint rarity of all LootboxOptions does not add up to 10 
      *      ids.length != qtys.length 
      *      ids are invalid 
@@ -299,7 +299,7 @@ abstract contract Rewards is ERC1155, Owned {
         }
     }
 
-    /// @notice calculates pseudorandom index between 0-9
+    /// @notice calculates a pseudorandom index between 0-9
     /// @dev vulnerable to timing attacks 
     function calculateRandom(uint256 id) public view returns (uint256) {
         uint256 random = uint256(
@@ -317,12 +317,12 @@ abstract contract Rewards is ERC1155, Owned {
         revert LOLHowDidYouGetHere(id);
     }
 
-    /// @notice gets lootboxOption by lootboxId and index
+    /// @notice gets a lootboxOption by lootboxId and index
     function getLootboxOptionByIdx(uint256 id, uint256 idx) public view returns (LootboxOption memory option) {
         return lootboxRewards[id][idx];
     }
 
-    /// @notice gets lootboxOptions length by lootboxId
+    /// @notice gets a lootboxOptions length by lootboxId
     function getLootboxOptionsLength(uint256 id) public view returns (uint256) {
         return lootboxRewards[id].length;
     }
