@@ -1,7 +1,7 @@
 import { Command, CliUx } from "@oclif/core";
 import { Healper } from "../scripts/healper";
 import { ethers } from "hardhat";
-import { BattlePass, BattlePass__factory } from "./../types";
+import { BattlePass, BattlePass__factory, Crafting, Crafting__factory } from "./../types";
 import { LevelInfoStruct } from "../types/src/battle-pass/BattlePass";
 import { LootboxOptionStruct } from "../types/src/battle-pass/Rewards";
 
@@ -56,8 +56,22 @@ export default class Create extends Command {
             this.log("Season created");
         }
         if (action === ACT.Lootbox) {
-
+            this.pass = await this.getContractAddress("BattlePass");
+            let factory = (await ethers.getContractFactory("BattlePass")) as BattlePass__factory;
+            let contract = (await factory.attach(this.pass)) as BattlePass;
+            this.log("sending tx to create new lootbox...");
+            try {
+                const receipt = await contract.newLootbox(await this.createLootbox(), await this.healper.getMaticFeeData());
+                await ethers.provider.waitForTransaction(receipt.hash, this.blocksToWait);
+                console.log("receipt received");
+            } catch (e) {
+                console.log("tx failed!!!");
+                console.log(e);
+                process.exit(1);
+            }
+            this.log("Lootbox created");
         }
+
     }
 
     async getContractAddress(ctr_type: string) {
@@ -138,6 +152,45 @@ export default class Create extends Command {
     }
 
     async createLootbox() {
-        let lootboxOptions: LootboxOptionStruct;
+        let lootboxOptions: LootboxOptionStruct[] = [];
+        let jointprob = 0;
+        let counter = 1;
+        while (jointprob < 10) {
+            this.log(`Creating lootboxOption ${counter}...`)
+            const rarity = parseInt(await CliUx.ux.prompt(`Max available rarity ${10 - jointprob}\nWhat's the rarity for this option?`));
+            if (isNaN(rarity) || rarity < 0 || rarity > (10 - jointprob)) {
+                this.log("Please enter a valid number");
+                process.exit(1);
+            }
+            const rewards = parseInt(await CliUx.ux.prompt("What's the number of rewards?"));
+            if (isNaN(rewards) || rewards < 0) {
+                this.log("Please enter a valid number");
+                process.exit(1);
+            }
+            let ids: string[] = [];
+            let qtys: string[] = [];
+            for (let i = 0; i < rewards; i++) {
+                const id = await CliUx.ux.prompt(`What's the id for reward ${i + 1}?`);
+                if (isNaN(id) || id < 0) {
+                    this.log("Please enter a valid number");
+                    process.exit(1);
+                }
+                ids.push(id);
+                const qty = await CliUx.ux.prompt(`What's the qty for reward ${i + 1}?`);
+                if (isNaN(qty) || qty < 0) {
+                    this.log("Please enter a valid number");
+                    process.exit(1);
+                }
+                qtys.push(qty);            
+            }
+            lootboxOptions.push({
+                rarityRange: [jointprob, jointprob + rarity],
+                ids: ids,
+                qtys: qtys
+            });
+            jointprob += rarity;
+        }
+        return lootboxOptions;
     }
+
 }
