@@ -15,7 +15,7 @@ export default class Onboard extends Command {
     static description = "Onboarding: deploy CreatorToken and BattlePass, whitelists BattlePass and create season";
     // prod - 5; dev - 0
     blocksToWait = 0;
-    
+
     public async run(): Promise<void> {
         if (process.env.ENV === "prod") { this.blocksToWait = 5; }
         this.creator_id = await CliUx.ux.prompt("What's the creator_id?");
@@ -79,7 +79,7 @@ export default class Onboard extends Command {
         this.log("Default crafting address: " + this.crafting);
         let answer = await CliUx.ux.prompt("Do you want to use default crafting address?[y/n]");
         if (answer === 'n') {
-            this.crafting = await CliUx.ux.prompt("What's the address of the game contract?");
+            this.crafting = await CliUx.ux.prompt("What's the address of the crafting contract?");
             if (!ethers.utils.isAddress(this.crafting)) {
                 this.log("Please enter a valid ETH address");
                 process.exit(1);

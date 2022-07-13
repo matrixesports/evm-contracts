@@ -4,6 +4,7 @@ import { ethers } from "hardhat";
 import { BattlePass, BattlePass__factory, Crafting, Crafting__factory } from "./../types";
 import { LevelInfoStruct } from "../types/src/battle-pass/BattlePass";
 import { LootboxOptionStruct } from "../types/src/battle-pass/Rewards";
+import { IngredientsStruct } from "../types/src/Crafting";
 
 enum ACT {
     Season = 1,
@@ -71,7 +72,34 @@ export default class Create extends Command {
             }
             this.log("Lootbox created");
         }
-
+        if (action === ACT.Recipe) {
+            this.log("Default crafting address: " + this.crafting);
+            let answer = await CliUx.ux.prompt("Do you want to use default crafting address?[y/n]");
+            if (answer === 'n') {
+                this.crafting = await CliUx.ux.prompt("What's the address of the crafting contract?");
+                if (!ethers.utils.isAddress(this.crafting)) {
+                    this.log("Please enter a valid ETH address");
+                    process.exit(1);
+                }
+            }
+            let factory = (await ethers.getContractFactory("Crafting")) as Crafting__factory;
+            let contract = (await factory.attach(this.crafting)) as Crafting;
+            this.log("Creating the input ingredients list...");
+            let inputIng = await this.getIngredients();
+            this.log("Creating the output ingredients list...");
+            let outputIng = await this.getIngredients();
+            this.log("sending tx to create new recipe...");
+            try {
+                const receipt = await contract.addRecipe(inputIng, outputIng, this.creator_id, await this.healper.getMaticFeeData());
+                await ethers.provider.waitForTransaction(receipt.hash, this.blocksToWait);
+                console.log("receipt received");
+            } catch (e) {
+                console.log("tx failed!!!");
+                console.log(e);
+                process.exit(1);
+            }
+            this.log("Recipe created");
+        }
     }
 
     async getContractAddress(ctr_type: string) {
@@ -81,7 +109,7 @@ export default class Create extends Command {
         try {
             res = await this.healper.queryDB(queryCommand, [this.creator_id, ctr_type]);
         } catch (e) {
-            this.log("There's no CreatorToken contract deployed");
+            this.log(`There's no ${ctr_type} contract deployed for creatorId ${this.creator_id}`);
         }
         return res.rows[0].address;
     }
@@ -193,4 +221,51 @@ export default class Create extends Command {
         return lootboxOptions;
     }
 
+    async getIngredients() {
+        let ingredients: IngredientsStruct;
+        const ingNum = parseInt(await CliUx.ux.prompt("What's the number of ingredients?"));
+        if (isNaN(ingNum) || ingNum < 0) {
+            this.log("Please enter a valid number");
+            process.exit(1);
+        }
+        let tokens: string[] = [];
+        let ids: string[] = [];
+        let qtys: string[] = [];
+        const defaultpass = await this.getContractAddress("BattlePass");
+        for (let i = 0; i < ingNum; i++) {
+            const lookup = await CliUx.ux.prompt("Do you want to choose from all BattlePass contracts?[y/n]");
+            if (lookup === 'y') {
+                const queryCommand =
+                    "SELECT address, name, creator_id FROM contract WHERE ctr_type='BattlePass'";
+                const query = await this.healper.queryDB(queryCommand, []);
+                for (const [index, row] of query.rows.entries()) {
+                    console.log(`${index + 1}: BattlePass for creatorId ${row.creator_id} and name ${row.name}`);
+                }
+                const selector = parseInt(await CliUx.ux.prompt(`Select BattlePass for ingredient ${i + 1}`));
+                if (isNaN(selector) || selector < 0 || selector > query.rows.length) {
+                    this.log("Please enter a valid number");
+                    process.exit(1);
+                }
+                tokens.push(query.rows[selector - 1].address);
+            } else { tokens.push(defaultpass); }
+
+            const id = await CliUx.ux.prompt(`What's the id for reward ${i + 1}?`);
+            if (isNaN(id) || id < 0) {
+                this.log("Please enter a valid number");
+                process.exit(1);
+            }
+            ids.push(id);
+            const qty = await CliUx.ux.prompt(`What's the qty for reward ${i + 1}?`);
+            if (isNaN(qty) || qty < 0) {
+                this.log("Please enter a valid number");
+                process.exit(1);
+            }
+            qtys.push(qty);  
+        }
+        return ingredients = {
+            tokens: tokens,
+            ids: ids,
+            qtys: qtys
+        };
+    }
 }

@@ -152,8 +152,6 @@ export default class Deploy extends Command {
     }
 
     async whitelist() {
-        //get address
-
         this.log("sending tx to whitelist pass...");
         let factory = (await ethers.getContractFactory("CreatorToken")) as CreatorToken__factory;
         let contract = (await factory.attach(this.creatorToken)) as CreatorToken;
