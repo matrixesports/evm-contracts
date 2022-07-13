@@ -15,7 +15,7 @@ const pool = new Pool({
     connectionString,
 });
 
-export class Helper {
+export class Healper {
     async verify(address: string, args: string[]) {
         console.log("verifying...");
         await HardhatRuntimeEnvironment.run("verify:verify", {
@@ -103,6 +103,7 @@ export class Helper {
     async queryDB(queryCommand: string, queryArgs: string[]) {
         let res;
         const client = await pool.connect();
+        console.log("quering db...");
         try {
             await client.query("BEGIN");
             res = await client.query(queryCommand, queryArgs);

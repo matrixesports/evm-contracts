@@ -1,28 +1,13 @@
-import { Command, Flags, CliUx } from "@oclif/core";
-import * as fs from "fs";
-import * as path from "path";
+import { Command, CliUx } from "@oclif/core";
+import path from "path";
+import fs from "fs";
 
 export default class Init extends Command {
     creator_id = "";
     dir = "";
-    static description = "Initialize directory structure for creators and contracts";
-    static examples = ["init -i"];
-    static flags = {
-        interactive: Flags.boolean({ char: "i", description: "interactive mode" }),
-    };
+    static description = "Initialize directory structure for contract's metadata and images.";
 
     public async run(): Promise<void> {
-        const { flags } = await this.parse(Init);
-
-        if (flags.interactive) {
-            this.interactive();
-        } else {
-            console.log("Only interactive mode, use -i");
-            process.exit(1);
-        }
-    }
-
-    public async interactive() {
         const mode = await CliUx.ux.prompt(
             "Initialize directory\n1: New creator\n2: New contract\nSelect target"
         );

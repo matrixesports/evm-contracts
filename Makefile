@@ -11,6 +11,6 @@ execute_matic   :; forge script script/Dev.s.sol:DevScript --rpc-url $(POLYGON_R
 execute_rinkeby	:; forge script script/Dev.s.sol:DevScript --rpc-url $(RINKEBY_RPC) --private-key $(PVT_KEY) --etherscan-api-key $(ETHERSCAN_API_KEY) --verify --broadcast --slow --sig $(sig)
 execute_mainnet	:; forge script script/Dev.s.sol:DevScript --rpc-url $(MAINNET_RPC) --private-key $(PVT_KEY) --etherscan-api-key $(ETHERSCAN_API_KEY) --verify --broadcast --slow --sig $(sig)
 
-install 		:; foundryup && forge install && yarn install && npx hardhat clean && npx hardhat compile
+install 		:; foundryup && forge install && yarn install && npx hardhat clean && npx hardhat compile && forge build
 lint    		:; prettier --write src/**/*.sol && prettier --write src/*.sol
 

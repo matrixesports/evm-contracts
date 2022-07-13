@@ -2,8 +2,8 @@ import "hardhat-preprocessor";
 import "@nomiclabs/hardhat-ethers";
 import "@nomiclabs/hardhat-etherscan";
 import "@typechain/hardhat";
-import * as fs from "fs";
-import * as dotenv from "dotenv";
+import fs from "fs";
+import dotenv from "dotenv";
 
 dotenv.config();
 let POLYGON_RPC = process.env.POLYGON_RPC;
