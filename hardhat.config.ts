@@ -34,7 +34,7 @@ module.exports = {
       },
     },
   },
-  defaultNetwork: "localhost",
+  defaultNetwork: "matic",
   networks: {
     matic: {
       url: POLYGON_RPC,
