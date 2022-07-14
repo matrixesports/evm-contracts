@@ -4,7 +4,6 @@ import { ethers } from "hardhat";
 import { BattlePass, BattlePass__factory, Crafting, Crafting__factory } from "./../types";
 import { LevelInfoStruct } from "../types/src/battle-pass/BattlePass";
 import { LootboxOptionStruct } from "../types/src/battle-pass/Rewards";
-import { IngredientsStruct } from "../types/src/Crafting";
 
 enum ACT {
     Season = 1,
@@ -12,13 +11,10 @@ enum ACT {
     Recipe = 3,
 }
 export default class Create extends Command {
-    creator_id = "";
+    static description = "Interacts with deployed contracts";
     healper = new Healper();
     crafting = "0x0000000000000000000000000000000000000000";
-    game = "0x0000000000000000000000000000000000000000";
-    creatorToken = "0x0000000000000000000000000000000000000000";
     pass = "0x0000000000000000000000000000000000000000";
-    static description = "Interacts with deployed contracts";
     // prod - 5; dev - 0
     blocksToWait = 0;    
 
@@ -34,14 +30,14 @@ export default class Create extends Command {
             process.exit(1);
         }
 
-        this.creator_id = await CliUx.ux.prompt("What's the creator_id?");
-        if (isNaN(Number(this.creator_id))) {
+        const creator_id = await CliUx.ux.prompt("What's the creator_id?");
+        if (isNaN(Number(creator_id))) {
             this.log("Please enter a valid number!");
             process.exit(1);
         }
 
         if (action === ACT.Season) {
-            this.pass = await this.getContractAddress("BattlePass");
+            this.pass = await this.getContractAddress("BattlePass", creator_id);
             let factory = (await ethers.getContractFactory("BattlePass")) as BattlePass__factory;
             let contract = (await factory.attach(this.pass)) as BattlePass;
             this.log("sending tx to create new season...");
@@ -57,7 +53,7 @@ export default class Create extends Command {
             this.log("Season created");
         }
         if (action === ACT.Lootbox) {
-            this.pass = await this.getContractAddress("BattlePass");
+            this.pass = await this.getContractAddress("BattlePass", creator_id);
             let factory = (await ethers.getContractFactory("BattlePass")) as BattlePass__factory;
             let contract = (await factory.attach(this.pass)) as BattlePass;
             this.log("sending tx to create new lootbox...");
@@ -73,6 +69,7 @@ export default class Create extends Command {
             this.log("Lootbox created");
         }
         if (action === ACT.Recipe) {
+            this.pass = await this.getContractAddress("BattlePass", creator_id);
             this.log("Default crafting address: " + this.crafting);
             let answer = await CliUx.ux.prompt("Do you want to use default crafting address?[y/n]");
             if (answer === 'n') {
@@ -85,12 +82,12 @@ export default class Create extends Command {
             let factory = (await ethers.getContractFactory("Crafting")) as Crafting__factory;
             let contract = (await factory.attach(this.crafting)) as Crafting;
             this.log("Creating the input ingredients list...");
-            let inputIng = await this.getIngredients();
+            let inputIng = await this.createIngredients();
             this.log("Creating the output ingredients list...");
-            let outputIng = await this.getIngredients();
+            let outputIng = await this.createIngredients();
             this.log("sending tx to create new recipe...");
             try {
-                const receipt = await contract.addRecipe(inputIng, outputIng, this.creator_id, await this.healper.getMaticFeeData());
+                const receipt = await contract.addRecipe(inputIng, outputIng, creator_id, await this.healper.getMaticFeeData());
                 await ethers.provider.waitForTransaction(receipt.hash, this.blocksToWait);
                 console.log("receipt received");
             } catch (e) {
@@ -102,14 +99,14 @@ export default class Create extends Command {
         }
     }
 
-    async getContractAddress(ctr_type: string) {
+    async getContractAddress(ctr_type: string, creator_id: string) {
         const queryCommand =
         "SELECT address FROM contract WHERE creator_id=$1 AND ctr_type=$2";
         let res: any;
         try {
-            res = await this.healper.queryDB(queryCommand, [this.creator_id, ctr_type]);
+            res = await this.healper.queryDB(queryCommand, [creator_id, ctr_type]);
         } catch (e) {
-            this.log(`There's no ${ctr_type} contract deployed for creatorId ${this.creator_id}`);
+            this.log(`There's no ${ctr_type} contract deployed for creatorId ${creator_id}`);
         }
         return res.rows[0].address;
     }
@@ -221,8 +218,7 @@ export default class Create extends Command {
         return lootboxOptions;
     }
 
-    async getIngredients() {
-        let ingredients: IngredientsStruct;
+    async createIngredients() {
         const ingNum = parseInt(await CliUx.ux.prompt("What's the number of ingredients?"));
         if (isNaN(ingNum) || ingNum < 0) {
             this.log("Please enter a valid number");
@@ -231,7 +227,7 @@ export default class Create extends Command {
         let tokens: string[] = [];
         let ids: string[] = [];
         let qtys: string[] = [];
-        const defaultpass = await this.getContractAddress("BattlePass");
+        
         for (let i = 0; i < ingNum; i++) {
             const lookup = await CliUx.ux.prompt("Do you want to choose from all BattlePass contracts?[y/n]");
             if (lookup === 'y') {
@@ -247,7 +243,7 @@ export default class Create extends Command {
                     process.exit(1);
                 }
                 tokens.push(query.rows[selector - 1].address);
-            } else { tokens.push(defaultpass); }
+            } else { tokens.push(this.pass); }
 
             const id = await CliUx.ux.prompt(`What's the id for reward ${i + 1}?`);
             if (isNaN(id) || id < 0) {
@@ -262,7 +258,7 @@ export default class Create extends Command {
             }
             qtys.push(qty);  
         }
-        return ingredients = {
+        return {
             tokens: tokens,
             ids: ids,
             qtys: qtys
