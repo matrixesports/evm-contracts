@@ -63,7 +63,7 @@ export class Deployer {
 
         await ethers.provider.waitForTransaction(contract.deployTransaction.hash, this.blocksToWait);
         if (process.env.ENV === "prod") {
-            await this.healper.verify(contract.address, [name, symbol, decimals]);
+            await this.healper.verify(contract.address, [name, symbol, decimals, ethers.constants.AddressZero]);
         } 
 
         const queryCommand = "INSERT INTO contract Values($1,$2,$3,$4,$5,$6)";

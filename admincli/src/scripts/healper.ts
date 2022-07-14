@@ -11,6 +11,7 @@ if (process.env.ENV == "dev") {
 } else {
     connectionString = process.env.RAILWAY_URL!;
 }
+
 const pool = new Pool({
     connectionString,
 });
@@ -71,8 +72,7 @@ export class Healper {
 
         let readme = path.join(process.env.CREATORS_DIR!, dir, "/./../README.md");
         const payload = basedir + "   " + res.data.IpfsHash + "\n";
-        fs.writeFileSync(readme, payload);
-        fs.readFileSync(readme, "utf8");
+        fs.appendFileSync(readme, payload);
         return res.data.IpfsHash;
     }
 
@@ -117,6 +117,76 @@ export class Healper {
         }
     }
 
+    async addToBP(
+        address: string,
+        dbname: string,
+        CliUx: (name: string, options?: any | undefined) => Promise<any>) {
+        let socialOptions = new Map<number, string>([
+            [1, "INSTAGRAM_USERNAME"],
+            [2, "TWITTER_USERNAME"],
+            [3, "TWITCH_USERNAME"],
+            [4, "CLASH_USERNAME"]
+        ]);
+        let paymentOptions = new Map<number, string>([
+            [1, "CASHAPP"],
+            [2, "PAYPAL_EMAIL"],
+            [3, "VENMO_USERNAME"],
+        ]);
+              
+        const description = await CliUx("What's the description?");
+        const price = await CliUx("What's the price?");
+        const currency = await CliUx("What's the currency?");
+        const year = await CliUx("What's the end date?\nWhat's the year?");
+        const month = await CliUx("What's the month?");
+        const day = await CliUx("What's the day?");
+        const endDate = new Date(year, month - 1, day); 
+        let counter = 0;
+        let more = 'y';
+        let socials = [];
+        while(counter < socialOptions.size && more === 'y') {
+            let selector = parseInt(await
+                CliUx(
+                    "Available social options:\n1: INSTAGRAM USERNAME\n2: TWITTER USERNAME\n3: TWITCH_USERNAME\n4: CLASH USERNAME\nPlease option"
+                )
+            );
+            if (isNaN(selector) || selector < 1 || selector > socialOptions.size) {
+                console.log("Please enter a valid number");
+                process.exit(1);
+            }
+            socials.push(socialOptions.get(selector));
+            counter++;
+            more = await CliUx("Do you want to add more options?[y/n]");
+        }
+        counter = 0;
+        more = 'y';
+        let payments = [];
+        while(counter < paymentOptions.size && more === 'y') {
+            let selector = parseInt(await 
+                CliUx(
+                    "Available payment options:\n1: CASHAPP\n2: PAYPAL EMAIL\n3: VENMO USERNAME\nPlease option"
+                )
+            );
+            if (isNaN(selector) || selector < 1 || selector > paymentOptions.size) {
+                console.log("Please enter a valid number");
+                process.exit(1);
+            }
+            payments.push(paymentOptions.get(selector));
+            counter++;
+            more = await CliUx("Do you want to add more options?[y/n]");
+        }
+        const queryCommand = "INSERT INTO battlepass Values($1,$2,$3,$4,$5,$6,$7,$8)";
+        const queryArgs = [
+            address,
+            dbname,
+            description,
+            price,
+            currency,
+            endDate.toDateString(),
+            payments,
+            socials,
+        ];
+        await this.queryDB(queryCommand, queryArgs);
+    }
     async getMaticFeeData() {
         try {
             const { data } = await axios({

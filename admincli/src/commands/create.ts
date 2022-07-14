@@ -15,7 +15,6 @@ export default class Create extends Command {
     healper = new Healper();
     crafting = "0x0000000000000000000000000000000000000000";
     pass = "0x0000000000000000000000000000000000000000";
-    // prod - 5; dev - 0
     blocksToWait = 0;    
 
     public async run(): Promise<void> {

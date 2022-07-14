@@ -9,7 +9,6 @@ export default class Deploy extends Command {
     deployer = new Deployer();
     crafting = "0x0000000000000000000000000000000000000000";
     game = "0x0000000000000000000000000000000000000000";
-    // prod - 5; dev - 0
     blocksToWait = 0;
     contracts = new Map<number, string>([
         [1, "BattlePass"],
@@ -19,7 +18,7 @@ export default class Deploy extends Command {
 
     public async run(): Promise<void> {
         if (process.env.ENV === "prod") { this.blocksToWait = 5; }
-
+        
         const selector = parseInt(
             await CliUx.ux.prompt(
                 "Available contract types:\n1: Battle Pass\n2: Crafting\n3: CreatorToken\nSelect type"
@@ -44,7 +43,7 @@ export default class Deploy extends Command {
             this.log("Default crafting address: " + this.crafting);
             let answer = await CliUx.ux.prompt("Do you want to use default crafting address?[y/n]");
             if (answer === 'n') {
-                this.crafting = await CliUx.ux.prompt("What's the address of the game contract?");
+                this.crafting = await CliUx.ux.prompt("What's the address of the crafting contract?");
                 if (!ethers.utils.isAddress(this.crafting)) {
                     this.log("Please enter a valid ETH address");
                     process.exit(1);
@@ -62,7 +61,8 @@ export default class Deploy extends Command {
             }
             const dbname = await CliUx.ux.prompt("What's the name for the db entry?");
             this.log("deploying...");
-            await this.deployer.deployBattlePass(creator_id, dbname, uri, this.crafting, this.game);
+            const pass = await this.deployer.deployBattlePass(creator_id, dbname, uri, this.crafting, this.game);
+            await this.healper.addToBP(pass, dbname, CliUx.ux.prompt);
         }
         if (ctr_type === "Crafting") {
             const dbname = await CliUx.ux.prompt("What's the name for the db entry?");
