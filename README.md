@@ -97,12 +97,34 @@ Each creator that we onboard gets their own `BattlePass`, `CreatorToken` and `Pa
 - https://github.com/abigger87/femplate
 - https://github.com/foundry-rs/forge-template
 
-# AdminClI
+## AdminCLI
 
-- Create folder creators/'creator_id'
-- Create folder creators/'creator_id'/pass
-- Create folder creators/'creator_id'/images
-- Create folder creators/'creator_id'/metadata
-- Create README.md in creators/'creator_id'/
+CLI tool for deploying and interacting with the MTX contracts. You can specify the default network in the `hardhat.config.ts`. When the network is `localhost`, set the envirotment variable `ENV=dev`, otherwise set to `prod`. For netowrk configuration see [hardhat](https://hardhat.org/hardhat-runner/docs/config). 
 
-- v2 replace with admin init
+### Usage 
+---
+
+`./admincli/run <command>`
+
+- init 
+  - Initializes the directory structure for each creator.  
+    creators/
+    - <creator_id>/
+        - pass/
+            - images/
+            - metadata/
+            - README.md
+              - `images CID`
+              - `metadata CID`
+- deploy
+  - `Battle Pass`
+  - `Crafting`
+  - `CreatorToken`
+- onboard 
+  - Deploys the `CreatorToken`, then the `BattlePass` and whitelists it.
+- create
+  - Season
+  - Lootbox
+  - Recipe 
+
+
