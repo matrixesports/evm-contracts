@@ -17,11 +17,11 @@ contract SoupcansNFT is ERC721, Owned, ReentrancyGuard {
     /// @dev mint id
     uint256 public mintId;
     /// @dev reserved for private auction
-    uint256 public constant RESERVED_PRIVATE = 5;
+    uint256 public constant RESERVED_PRIVATE = 10;
     /// @dev total supply
     uint256 public constant TOTAL_SUPPLY = 1000;
 
-    constructor(string memory _baseTokenURI) ERC721("NAME", "SYMBOL") Owned(msg.sender) {
+    constructor(string memory _baseTokenURI) ERC721("Soup cans", "SOUP") Owned(msg.sender) {
         baseTokenURI = _baseTokenURI;
     }
 
