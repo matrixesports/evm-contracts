@@ -228,11 +228,11 @@ abstract contract Rewards is ERC1155, Owned {
         lootboxId++;
         uint256 cumulativeProbability;
         for (uint256 x = 0; x < options.length; x++) {
+            if (options[x].ids.length != options[x].qtys.length) revert IncorrectLootboxOptions();
             for (uint256 y; y < options[x].ids.length; y++) {
                 checkType(options[x].ids[y]);
-                if (options[x].ids.length != options[x].qtys.length) revert IncorrectLootboxOptions();
             }
-            cumulativeProbability = options[x].rarityRange[1] - options[x].rarityRange[0];
+            cumulativeProbability += options[x].rarityRange[1] - options[x].rarityRange[0];
             lootboxRewards[lootboxId].push(options[x]);
         }
         if (cumulativeProbability != 10) revert IncorrectLootboxOptions();

@@ -3,9 +3,17 @@ pragma solidity >=0.8.0;
 
 import "forge-std/Script.sol";
 import "../src/battle-pass/BattlePass.sol";
+import "../src/battle-pass/CreatorToken.sol";
 
+//deploy pass
+//new season
+//new lootbox if any
+//deploy token
+//set token in pass
+
+//xp
 contract PassScript is Script {
-    BattlePass pass;
+    BattlePass pass = BattlePass(0x0cd2EC07524fFbF80334304101C7bD34886A286a);
 
     function newBattlePass() public {
         address crafting;
@@ -17,148 +25,126 @@ contract PassScript is Script {
     }
 
     function giveXp() public {
-        uint256 _seasonId;
-        uint256 xp;
-        address user;
+        uint256 _seasonId = 1;
+        uint256 xp = 5610;
+        address user = 0x15fF62427589165189B2eD3d4FF6C7455b326E45;
+        //me:
+        //rama:0x04405FE47BFA78306E67bAc1C3914de229b54192
+        //zach:0x15fF62427589165189B2eD3d4FF6C7455b326E45;
         vm.startBroadcast();
-        pass = BattlePass(address(1));
         pass.giveXp(_seasonId, xp, user);
     }
 
     function newSeason() public {
-        LevelInfo[] memory levels = new LevelInfo[](11);
-        levels[0].xpToCompleteLevel;
-        levels[0].freeRewardId;
-        levels[0].freeRewardQty;
-        levels[0].premiumRewardId;
-        levels[0].premiumRewardQty;
+        LevelInfo[] memory levels = new LevelInfo[](10);
+        levels[0].xpToCompleteLevel = 175;
+        levels[0].freeRewardId = 1;
+        levels[0].freeRewardQty = 2;
+        levels[0].premiumRewardId = 1000;
+        levels[0].premiumRewardQty = 10;
 
-        levels[1].xpToCompleteLevel;
-        levels[1].freeRewardId;
-        levels[1].freeRewardQty;
-        levels[1].premiumRewardId;
-        levels[1].premiumRewardQty;
+        levels[1].xpToCompleteLevel = 200;
+        levels[1].freeRewardId = 1002;
+        levels[1].freeRewardQty = 1;
+        levels[1].premiumRewardId = 10000;
+        levels[1].premiumRewardQty = 2;
 
-        levels[2].xpToCompleteLevel;
-        levels[2].freeRewardId;
-        levels[2].freeRewardQty;
-        levels[2].premiumRewardId;
-        levels[2].premiumRewardQty;
+        levels[2].xpToCompleteLevel = 200;
+        levels[2].freeRewardId = 20000;
+        levels[2].freeRewardQty = 1;
+        levels[2].premiumRewardId = 20101;
+        levels[2].premiumRewardQty = 1;
 
-        levels[3].xpToCompleteLevel;
-        levels[3].freeRewardId;
-        levels[3].freeRewardQty;
-        levels[3].premiumRewardId;
-        levels[3].premiumRewardQty;
+        levels[3].xpToCompleteLevel = 300;
+        levels[3].freeRewardId = 1;
+        levels[3].freeRewardQty = 1;
+        levels[3].premiumRewardId = 1000;
+        levels[3].premiumRewardQty = 10;
 
-        levels[4].xpToCompleteLevel;
-        levels[4].freeRewardId;
-        levels[4].freeRewardQty;
-        levels[4].premiumRewardId;
-        levels[4].premiumRewardQty;
+        levels[4].xpToCompleteLevel = 500;
+        levels[4].freeRewardId = 1;
+        levels[4].freeRewardQty = 1;
+        levels[4].premiumRewardId = 1000;
+        levels[4].premiumRewardQty = 10;
 
-        levels[5].xpToCompleteLevel;
-        levels[5].freeRewardId;
-        levels[5].freeRewardQty;
-        levels[5].premiumRewardId;
-        levels[5].premiumRewardQty;
+        levels[5].xpToCompleteLevel = 700;
+        levels[5].freeRewardId = 1002;
+        levels[5].freeRewardQty = 1;
+        levels[5].premiumRewardId = 1;
+        levels[5].premiumRewardQty = 1;
 
-        levels[6].xpToCompleteLevel;
-        levels[6].freeRewardId;
-        levels[6].freeRewardQty;
-        levels[6].premiumRewardId;
-        levels[6].premiumRewardQty;
+        levels[6].xpToCompleteLevel = 1000;
+        levels[6].freeRewardId = 1000;
+        levels[6].freeRewardQty = 1;
+        levels[6].premiumRewardId = 1;
+        levels[6].premiumRewardQty = 1;
 
-        levels[7].xpToCompleteLevel;
-        levels[7].freeRewardId;
-        levels[7].freeRewardQty;
-        levels[7].premiumRewardId;
-        levels[7].premiumRewardQty;
+        levels[7].xpToCompleteLevel = 1000;
+        levels[7].freeRewardId = 1;
+        levels[7].freeRewardQty = 1;
+        levels[7].premiumRewardId = 1;
+        levels[7].premiumRewardQty = 1;
 
-        levels[8].xpToCompleteLevel;
-        levels[8].freeRewardId;
-        levels[8].freeRewardQty;
-        levels[8].premiumRewardId;
-        levels[8].premiumRewardQty;
+        levels[8].xpToCompleteLevel = 1135;
+        levels[8].freeRewardId = 1;
+        levels[8].freeRewardQty = 1;
+        levels[8].premiumRewardId = 1;
+        levels[8].premiumRewardQty = 1;
 
-        levels[9].xpToCompleteLevel;
-        levels[9].freeRewardId;
-        levels[9].freeRewardQty;
-        levels[9].premiumRewardId;
-        levels[9].premiumRewardQty;
+        levels[9].xpToCompleteLevel = 0;
+        levels[9].freeRewardId = 1;
+        levels[9].freeRewardQty = 1;
+        levels[9].premiumRewardId = 1;
+        levels[9].premiumRewardQty = 1;
 
-        levels[10].xpToCompleteLevel = 0;
-        levels[10].freeRewardId;
-        levels[10].freeRewardQty;
-        levels[10].premiumRewardId;
-        levels[10].premiumRewardQty;
-
-        pass = BattlePass(address(1));
         vm.startBroadcast();
         uint256 seasonId = pass.newSeason(levels);
         console.log(seasonId);
     }
 
-    function setCreatorToken() public {
-        address newToken;
-        pass = BattlePass(address(1));
+    function newCreatorToken() public {
         vm.startBroadcast();
-        pass.setCreatorTokenCtr(newToken);
+        CreatorToken token = new CreatorToken("HELOO", "H", 18, address(pass));
+    }
+
+    function setCreatorToken() public {
+        vm.startBroadcast();
+        pass.setCreatorTokenCtr(0x1612835E37cA75d8c5Ec97246af6136fd081a886);
     }
 
     function toggleWhitelist() public {
-        bool toggle;
+        bool toggle = true;
         address grant;
-        pass = BattlePass(address(1));
+
         vm.startBroadcast();
         pass.togglewhitelisted(grant, toggle);
     }
 
     function setURI() public {
-        string memory newURI;
-        pass = BattlePass(address(1));
         vm.startBroadcast();
-        pass.setURI(newURI);
+        pass.setURI("ipfs://QmVzGmSUwQdv7seqdXRoWdHYC4fJbjahdiTE9rjCb7qjz7");
     }
 
     function newLootbox() public {
-        LootboxOption[] memory options = new LootboxOption[](5);
-        options[0].rarityRange[0];
-        options[0].rarityRange[1];
-        uint256[] memory x = new uint256[](2);
+        LootboxOption[] memory options = new LootboxOption[](2);
+        options[0].rarityRange[0] = 0;
+        options[0].rarityRange[1] = 5;
+        uint256[] memory x = new uint256[](1);
+        x[0] = 1;
         options[0].ids = x;
-        x = new uint256[](2);
+        x = new uint256[](1);
+        x[0] = 1;
         options[0].qtys = x;
 
-        options[1].rarityRange[0];
-        options[1].rarityRange[1];
-        x = new uint256[](2);
+        options[1].rarityRange[0] = 5;
+        options[1].rarityRange[1] = 10;
+        x = new uint256[](1);
+        x[0] = 1000;
         options[1].ids = x;
-        x = new uint256[](2);
+        x = new uint256[](1);
+        x[0] = 1000;
         options[1].qtys = x;
 
-        options[2].rarityRange[0];
-        options[2].rarityRange[1];
-        x = new uint256[](2);
-        options[2].ids = x;
-        x = new uint256[](2);
-        options[2].qtys = x;
-
-        options[3].rarityRange[0];
-        options[3].rarityRange[1];
-        x = new uint256[](2);
-        options[3].ids = x;
-        x = new uint256[](2);
-        options[3].qtys = x;
-
-        options[4].rarityRange[0];
-        options[4].rarityRange[1];
-        x = new uint256[](2);
-        options[4].ids = x;
-        x = new uint256[](2);
-        options[4].qtys = x;
-
-        pass = BattlePass(address(1));
         vm.startBroadcast();
         uint256 lootboxId = pass.newLootbox(options);
         console.log(lootboxId);

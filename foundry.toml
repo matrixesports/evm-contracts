@@ -1,7 +1,7 @@
 # Foundry Configuration File
 # See more config options at: https://github.com/gakonst/foundry/tree/master/config
 
-[default]
+[profile.default]
 verbosity = 4
 fuzz_runs = 256
 optimizer = true
@@ -15,7 +15,7 @@ remappings = [
 
 
 # extends default options
-[intense]
+[profile.intense]
 fuzz-runs = 10_000
 cache = false
 force = true

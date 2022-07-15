@@ -7,10 +7,9 @@ import "../src/misc/SoupcansNFT.sol";
 contract DevScript is Script {
     SoupcansNFT token;
 
-    function dev() public {
+    function run() public {
         vm.startBroadcast();
-        token = new SoupcansNFT("ipfs://QmXuU6EZhyYm2BBSZUxSzy4Lb3Xao2rMJDrsLYYGFW81Ke/");
-
+        token = new SoupcansNFT("ipfs://QmdFYm5TLuBDKgMXKt8zVem2LNQiUGyCgrmxf5F9zRYntL/");
         //mint private
         token.mintForAuction();
         token.mintForAuction();
