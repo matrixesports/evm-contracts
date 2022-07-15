@@ -102,6 +102,13 @@ contract PassScript is Script {
         console.log(seasonId);
     }
 
+    function changeReward() public {
+        vm.startBroadcast();
+        pass.addReward(1, 5, false, 10000, 5);
+        pass.addReward(1, 6, false, 10000, 5);
+        pass.addReward(1, 7, false, 10000, 5);
+    }
+
     function newCreatorToken() public {
         vm.startBroadcast();
         CreatorToken token = new CreatorToken("HELOO", "H", 18, address(pass));
