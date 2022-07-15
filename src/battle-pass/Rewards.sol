@@ -50,6 +50,7 @@ error NotWhitelisted(address sender);
  * @dev
  * ERC1155 is used since it allows for both fungible and non fungible tokens
  * crafting contract, owner and the game contract are allowed to mint burn items for a user
+ * ID 0 means empty reward
  * Premium passes: ids 1-999 reserved for issuing premium passes for new seasons.
  * seasons x needs to mint id x in order to give user a premium pass
  * Creator Token: NOT minted by the Battle Pass, it is minted by the creator token contract
