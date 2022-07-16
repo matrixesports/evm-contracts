@@ -1,13 +1,13 @@
 import "hardhat-preprocessor";
 import "@nomiclabs/hardhat-ethers";
 import "@nomiclabs/hardhat-etherscan";
-import * as fs from "fs";
-import * as dotenv from "dotenv";
+import "@typechain/hardhat";
+import fs from "fs";
+import dotenv from "dotenv";
 
 dotenv.config();
 let POLYGON_RPC = process.env.POLYGON_RPC;
 let POLYGONSCAN_API_KEY = process.env.POLYGONSCAN_API_KEY;
-
 let PVT_KEY = process.env.PVT_KEY;
 
 function getRemappings() {
@@ -34,9 +34,16 @@ module.exports = {
       url: POLYGON_RPC,
       accounts: [PVT_KEY],
     },
+    localhost: {
+      url: "http://127.0.0.1:8545/",
+    },
   },
   etherscan: {
     apiKey: POLYGONSCAN_API_KEY,
+  },
+  typechain: {
+    outDir: "./admincli/src/types",
+    target: "ethers-v5",
   },
   preprocess: {
     eachLine: (hre: any) => ({

@@ -69,10 +69,9 @@ Each creator gets their own `BattlePass`, `CreatorToken`, and `Pathfinder` contr
 - The community can change the skins on their Defenders by passing governance proposals. We use a modified version of [DPD](https://intrago.xyz/) for it.
 - In V2 we'll allow p2p fighting where different communities can attack each other.
 
-## What can you do with the contracts?:
+## What can you do with the contracts?
 
 - [TODO]
-
 
 ## Considerations
 
@@ -82,7 +81,7 @@ Each creator gets their own `BattlePass`, `CreatorToken`, and `Pathfinder` contr
 - erc20 token takes decimals into account, so to give nice whole numbers, account for that
 - contracts should not allow bad inputs.if this is done properly then the ouput/queries by FE will not have to be checked.
 
+
 ## Acknowledgements
 
 - Repo structure heavily inspired by [solmate](https://github.com/Rari-Capital/solmate), [femplate](https://github.com/abigger87/femplate), [foundry](https://github.com/foundry-rs/forge-template)
-

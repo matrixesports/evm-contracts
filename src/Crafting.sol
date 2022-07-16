@@ -65,10 +65,10 @@ contract Crafting is Owned {
         uint256 creatorId
     ) external onlyOwner returns (uint256) {
         if (
-            input.tokens.length == input.ids.length &&
-            input.ids.length == input.qtys.length &&
-            output.tokens.length == output.ids.length &&
-            output.ids.length == output.qtys.length
+            input.tokens.length != input.ids.length ||
+            input.ids.length != input.qtys.length ||
+            output.tokens.length != output.ids.length ||
+            output.ids.length != output.qtys.length
         ) {
             revert IncorrectRecipeDetails();
         }
