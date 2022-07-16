@@ -16,19 +16,6 @@ enum RewardType {
     SPECIAL
 }
 
-/// @dev status of a redeemable item
-enum RedeemStatus {
-    REDEEMED,
-    PROCESSING,
-    REJECTED
-}
-
-/// @dev data stored when an item is redeemed
-struct Redemption {
-    uint256 itemId;
-    RedeemStatus status;
-}
-
 /**
  *  @dev a lootbox takes in multiple LootboxOptions and rewards one to the user
  * rarityRange of 0-1 means that the user has a 10% chance of getting this
@@ -63,6 +50,7 @@ error NotWhitelisted(address sender);
  * @dev
  * ERC1155 is used since it allows for both fungible and non fungible tokens
  * crafting contract, owner and the game contract are allowed to mint burn items for a user
+ * ID 0 means empty reward
  * Premium passes: ids 1-999 reserved for issuing premium passes for new seasons.
  * seasons x needs to mint id x in order to give user a premium pass
  * Creator Token: NOT minted by the Battle Pass, it is minted by the creator token contract
@@ -216,40 +204,6 @@ abstract contract Rewards is ERC1155, Owned {
     /// @param _uri new ipfs hash
     function setURI(string memory _uri) external onlyOwner {
         tokenURI = _uri;
-    }
-
-    /*//////////////////////////////////////////////////////////////
-                        REDEEMABLE ITEMS
-    //////////////////////////////////////////////////////////////*/
-
-    /// @dev redeemed entries for a given address
-    /// ticketId->Redemption
-    mapping(bytes32 => Redemption) public redeemed;
-
-    /// @notice redeeem a redeemable item
-    /// @dev id must be within approved range of redeeemable items
-    /// @param ticketId ticketId sent by ticketing service
-    /// @param user address that wants to redeem the item
-    /// @param id id of reward to redeem
-    function redeemReward(
-        bytes32 ticketId,
-        address user,
-        uint256 id
-    ) external onlyOwner {
-        RewardType reward = checkType(id);
-        if (reward != RewardType.REDEEMABLE) revert InvalidId(id);
-        redeemed[ticketId] = Redemption(id, RedeemStatus.PROCESSING);
-        _burn(user, id, 1);
-    }
-
-    /// @notice update redemption status of ticketId
-    /// @dev revert if ticket id does not exist
-    /// @param ticketId ticketId sent by ticketing service
-    /// @param status new status
-    function updateStatus(bytes32 ticketId, RedeemStatus status) external onlyOwner {
-        Redemption storage redeemedByUser = redeemed[ticketId];
-        if (redeemedByUser.itemId == 0) revert TicketIdDoesNotExist(ticketId);
-        redeemedByUser.status = status;
     }
 
     /*//////////////////////////////////////////////////////////////
