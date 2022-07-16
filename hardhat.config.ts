@@ -8,58 +8,53 @@ dotenv.config();
 let POLYGON_RPC = process.env.POLYGON_RPC;
 let POLYGONSCAN_API_KEY = process.env.POLYGONSCAN_API_KEY;
 
-let PVT_KEY;
-if (process.env.ENV == "dev") {
-    PVT_KEY = process.env.STAGING_PVT_KEY;
-} else {
-    PVT_KEY = process.env.PVT_KEY;
-}
+let PVT_KEY = process.env.PVT_KEY;
 
 function getRemappings() {
-    return fs
-        .readFileSync("remappings.txt", "utf8")
-        .split("\n")
-        .filter(Boolean) // remove empty lines
-        .map((line) => line.trim().split("="));
+  return fs
+    .readFileSync("remappings.txt", "utf8")
+    .split("\n")
+    .filter(Boolean) // remove empty lines
+    .map((line) => line.trim().split("="));
 }
 
 module.exports = {
-    solidity: {
-        version: "0.8.13",
-        settings: {
-            optimizer: {
-                enabled: true,
-                runs: 10000,
-            },
-        },
+  solidity: {
+    version: "0.8.13",
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 10000,
+      },
     },
-    defaultNetwork: "matic",
-    networks: {
-        matic: {
-            url: POLYGON_RPC,
-            accounts: [PVT_KEY],
-        },
+  },
+  defaultNetwork: "matic",
+  networks: {
+    matic: {
+      url: POLYGON_RPC,
+      accounts: [PVT_KEY],
     },
-    etherscan: {
-        apiKey: POLYGONSCAN_API_KEY,
-    },
-    preprocess: {
-        eachLine: (hre: any) => ({
-            transform: (line: string) => {
-                if (line.match(/^\s*import /i)) {
-                    getRemappings().forEach(([find, replace]) => {
-                        if (line.match(find)) {
-                            line = line.replace(find, replace);
-                        }
-                    });
-                }
-                return line;
-            },
-        }),
-    },
-    paths: {
-        sources: "./src",
-        cache: "./cache_hardhat",
-        artifacts: "./artifacts_hardhat",
-    },
+  },
+  etherscan: {
+    apiKey: POLYGONSCAN_API_KEY,
+  },
+  preprocess: {
+    eachLine: (hre: any) => ({
+      transform: (line: string) => {
+        if (line.match(/^\s*import /i)) {
+          getRemappings().forEach(([find, replace]) => {
+            if (line.match(find)) {
+              line = line.replace(find, replace);
+            }
+          });
+        }
+        return line;
+      },
+    }),
+  },
+  paths: {
+    sources: "./src",
+    cache: "./cache_hardhat",
+    artifacts: "./artifacts_hardhat",
+  },
 };

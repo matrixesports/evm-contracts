@@ -15,19 +15,6 @@ enum RewardType {
     SPECIAL
 }
 
-/// @dev status of a redeemable item
-enum RedeemStatus {
-    REDEEMED,
-    PROCESSING,
-    REJECTED
-}
-
-/// @dev use after a user redeems an item
-struct Redemption {
-    uint256 itemId;
-    RedeemStatus status;
-}
-
 /**
  *  @dev a lootbox is a collection of LootboxOptions
  * rarity is rarityRange[1] - rarityRange[0]
@@ -64,14 +51,16 @@ error NotWhitelisted(address sender);
  * Crafting/Game contracts and owner can mint and burn items for a user
  * | Token ID      | Description                                                                             |
  * |---------------|-----------------------------------------------------------------------------------------|
+ * | 0             | Empty Reward                                                                            |
  * | 1-999         | Premium Passes (id === season_id); mint id x to give user a premium pass for season x   |
  * | 1000          | Creator's token; CreatorToken handles this token.                                       |
  * |               | Battle Pass is whitelisted to distribute and calls CreatorToken when id === 1000        |
  * | 1,001-9,999   | Lootboxes                                                                               |
  * | 10,000-19,999 | Redeemable Items                                                                        |
- * | 20,000-29,999 | Special NFTs/tokens; ids above 30,000 are invalid                                       |
+ * | 20,000-29,999 | Special NFTs/tokens                                                                     |
  * | 20,100-20,199 |        MTX-Game: defender items                                                         |
  * | 20,200-20,299 |        MTX-Game: attacker items                                                         |
+ * | >30000        | Invalid, prevents errors                                                                |
  */
 abstract contract Rewards is ERC1155, Owned {
     /// @dev adddresses that are allowed to mint/burn tokens
@@ -215,40 +204,6 @@ abstract contract Rewards is ERC1155, Owned {
     }
 
     /*//////////////////////////////////////////////////////////////
-                        REDEEMABLE ITEMS
-    //////////////////////////////////////////////////////////////*/
-
-    /// @dev redeemed entries for a given address
-    /// ticketId->Redemption
-    mapping(bytes32 => Redemption) public redeemed;
-
-    /// @notice redeeems a redeemable item
-    /// @dev id must be within the redeeemable items range
-    /// @param ticketId ticketing service send ticketId
-    /// @param user address who redeem the item
-    /// @param id redeemable item id
-    function redeemReward(
-        bytes32 ticketId,
-        address user,
-        uint256 id
-    ) external onlyOwner {
-        RewardType reward = checkType(id);
-        if (reward != RewardType.REDEEMABLE) revert InvalidId(id);
-        redeemed[ticketId] = Redemption(id, RedeemStatus.PROCESSING);
-        _burn(user, id, 1);
-    }
-
-    /// @notice updates redemption status of ticketId
-    /// @dev revert when ticketId does not exist
-    /// @param ticketId ticketing service send ticketId
-    /// @param status redemption status { REDEEMED, PROCESSING, REJECTED }
-    function updateStatus(bytes32 ticketId, RedeemStatus status) external onlyOwner {
-        Redemption storage redeemedByUser = redeemed[ticketId];
-        if (redeemedByUser.itemId == 0) revert TicketIdDoesNotExist(ticketId);
-        redeemedByUser.status = status;
-    }
-
-    /*//////////////////////////////////////////////////////////////
                             LOOTBOX
     //////////////////////////////////////////////////////////////*/
     
@@ -271,11 +226,11 @@ abstract contract Rewards is ERC1155, Owned {
         lootboxId++;
         uint256 cumulativeProbability;
         for (uint256 x = 0; x < options.length; x++) {
+            if (options[x].ids.length != options[x].qtys.length) revert IncorrectLootboxOptions();
             for (uint256 y; y < options[x].ids.length; y++) {
                 checkType(options[x].ids[y]);
-                if (options[x].ids.length != options[x].qtys.length) revert IncorrectLootboxOptions();
             }
-            cumulativeProbability = options[x].rarityRange[1] - options[x].rarityRange[0];
+            cumulativeProbability += options[x].rarityRange[1] - options[x].rarityRange[0];
             lootboxRewards[lootboxId].push(options[x]);
         }
         if (cumulativeProbability != 10) revert IncorrectLootboxOptions();

@@ -156,6 +156,7 @@ contract BattlePass is Rewards {
         tempUserInfo.claimed[_level][premium] = true;
 
         if (premium) {
+            if (seasonInfo[_seasonId][_level].premiumRewardId == 0) return;
             if (isUserPremium(user, _seasonId)) {
                 if (!tempUserInfo.claimedPremiumPass) {
                     tempUserInfo.claimedPremiumPass = true;
@@ -170,6 +171,7 @@ contract BattlePass is Rewards {
                 revert NeedPremiumPassToClaimPremiumReward(_seasonId, user);
             }
         } else {
+            if (seasonInfo[_seasonId][_level].freeRewardId == 0) return;
             mint(user, seasonInfo[_seasonId][_level].freeRewardId, seasonInfo[_seasonId][_level].freeRewardQty);
         }
     }
