@@ -10,7 +10,7 @@
 
 ## Getting started
  
-### Insalation
+### Instalation
 
 ```bash
 yarn all
@@ -21,7 +21,7 @@ yarn all
 - `main` branch is for production only. Changes are merged if all FE integrations and contracts tests pass.
 - Use feature branches for all other changes.
 - Refer to `pull_request_template` when opening a PR.
-- You can use the `admincli` to deploy and interact with MTX contracts. See /admincli/readme 
+- You can use the `admincli` to deploy and interact with MTX contracts.
 - This project uses [Foundry](https://getfoundry.sh). See the [book](https://book.getfoundry.sh/getting-started/installation.html) for instructions on how to install and use Foundry.
 
 ## Contracts
