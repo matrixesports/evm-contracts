@@ -21,8 +21,9 @@ struct LevelInfo {
 /** @dev stores user info
  * xp: user's xp 
  * premium pass gets burned when used for the first time 
- * claimedPremiumPass: true when user claims their *first* premium reward
- * user can claim premium rewards when claimedPremiumPass is true
+ * claimedPremiumPass: true when the user claims their *first* premium reward
+ * user can claim premium rewards when claimedPremiumPass is true or when the user owns a premium pass
+ * if the user owns a premium pass and claimedPremiumPass is true, then no premium pass gets burned 
  * claimed: true when reward is claimed at level and status {free or prem}
  */
 struct User {
