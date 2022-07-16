@@ -8,7 +8,7 @@ flattened.sol
 /artifacts_hardhat
 /cache_hardhat
 /broadcast/
-/admincli/src/types/
+/admincli/src/types
 
 # Environment
 .env
