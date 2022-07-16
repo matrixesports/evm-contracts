@@ -1,54 +1,63 @@
-# EVM contracts used in the MTX ecosystem
+<div align="center">
 
-## [![tests](https://github.com/matrixesports/evm-contracts/actions/workflows/tests.yml/badge.svg)](https://github.com/matrixesports/evm-contracts/actions/workflows/tests.yml) [![lints](https://github.com/matrixesports/evm-contracts/actions/workflows/lints.yml/badge.svg)](https://github.com/matrixesports/evm-contracts/actions/workflows/lints.yml)
+# MATRIX EVM Contracts
+</div>
+
+<div align="center">
+
+[![Tests](https://github.com/matrixesports/evm-contracts/actions/workflows/tests.yml/badge.svg)](https://github.com/matrixesports/evm-contracts/actions/workflows/tests.yml)[![Lints](https://github.com/matrixesports/evm-contracts/actions/workflows/lints.yml/badge.svg)](https://github.com/matrixesports/evm-contracts/actions/workflows/lints.yml)
+</div>
+
+## Getting started
+ 
+### Instalation
+
+```bash
+yarn all
+```
+### Development
+
+- Create `.env` file based on `.sampleenv`
+- `main` branch is for production only. Changes are merged if all FE integrations and contracts tests pass.
+- Use feature branches for all other changes.
+- Refer to `pull_request_template` when opening a PR.
+- This project uses [Foundry](https://getfoundry.sh). See the [book](https://book.getfoundry.sh/getting-started/installation.html) for instructions on how to install and use Foundry.
 
 ## Contracts
 
-Each creator that we onboard gets their own `BattlePass`, `CreatorToken` and `Pathfinder` contract. Most functions have `onlyOwner` modifier since we'll be paying gas fees for the user and want to make the ux seamless.
-
-### Crafting
-
----
-
-- Allows a user to burn owned tokens and get new tokens in return based on a 'recipe'. So it can be said that a user `crafts` items based on `recipes`.
-- A recipe defines what tokens, ids and quantities will be burned and what new tokens will be minted in return.
-- Has minting rights over every `BattlePass` contract.
-- For now, we only allows for recipes to be based on our deployed contracts. All items are a part of a creator's Battle Pass contracts.
-- Users earn rewards in the BattlePass and use those items to craft new items.
-- Only one deployed for the entire ecosystem.
-  - `matic`:
+Each creator gets their own `BattlePass`, `CreatorToken`, and `Pathfinder` contracts. Most functions use the `onlyOwner` modifier because we pay the gas fees for the users to make the UX seamless.
 
 ### BattlePass
 
----
-
-- 1 contract per creator.
-- Similar to the mechanism that tracks xp and gives rewards in games.
-- Responsibilities: store info on each level, track user progress, mint rewards upon level completion, create multiple seasons.
-- Gives the game and crafting contract minting/burning priveleges.
-- Handles metadata for display and minting of the creator token since it may be a reward at a level.
+- Each creator gets 1 `BattlePass` contract.
+- Battle Pass is a system that rewards users for completing creator-specific quests during established periods known as `seasons`. Experience points or `xp` tracks user progression. The mechanism is similar to the one used in video games. 
+- The contract is responsible for storing level information, tracking user progress, and minting rewards upon level completion. 
+- There can be multiple seasons in 1 BattlePass
+- The BattlePass can give minting/burning privileges by whitelisting contracts
 - Rewards can be of the following types:
-  - PREMIUM_PASS: Allows access to premium rewards if a user has a premium pass.
-  - CREATOR_TOKEN: Tokens specific to the creator the BattlePass is associated with.
-  - LOOTBOX: Like a surprise box. Gives one set of rewards out of many based on predefined probabilities.
-  - REDEEMABLE: Rewards that require manual intervention by creators irl.
-  - SPECIAL: One off NFT's, in-game assets, etc.
+  - `PREMIUM_PASS`: A user who owns a premium pass can claim premium rewards
+  - `CREATOR_TOKEN`: Creator-specific token associated with the BattlePass
+  - `LOOTBOX`: Defined by a list of reward options. A user gets one of the reward options upon opening a lootbox; like a surprise box. 
+  - `REDEEMABLE`: These require actions from the creators. When a user claims a redeemable reward, a ticket tracking the status of the reward is issued to the creator. The ticket is closed upon successful completion by the creator.
+  - `SPECIAL`: Custom assets, such as one-of-one NFTs, in-game assets, etc.
+
+### Crafting
+
+- Allows users to `craft` new tokens based on a `recipe`.
+- The recipe defines a list of input tokens, known as ingredients, and a list of output tokens. Crafting is then the act of burning the input tokens and minting the output tokens.
+- Crafting uses ONLY items from Battle Pass contracts and must be whitelisted by all BattlePass for minting rights. 
+- Deployed only once for the entire ecosystem:
+  - `matic`:
 
 ### CreatorToken
 
----
-
 - ERC20 token with delegation. The BattlePass contract mints this.
 
-### MARPA
+## MARPA (Matrix Advanced Research Projects Agency 😤)
 
----
-
-- stands for Matrix Advanced Research Projects Agency😤
+- [TODO] 
 
 ### Pathfinder
-
----
 
 - Clash of clans like game.
 - Each creator community gets their own village with the goal of protecting their Castle in the middle of the village.
@@ -60,20 +69,12 @@ Each creator that we onboard gets their own `BattlePass`, `CreatorToken` and `Pa
 - The community can change the skins on their Defenders by passing governance proposals. We use a modified version of [DPD](https://intrago.xyz/) for it.
 - In V2 we'll allow p2p fighting where different communities can attack each other.
 
-## Things that the contracts allow us to do:
+## What can you do with the contracts?:
 
-[add]
+- [TODO]
 
-## Getting started
 
----
-
-1. `yarn all`
-2. setup env variables based on `.sampleenv` file
-
-## Things to be careful of
-
----
+## Considerations
 
 - submodules:
   - solmate, forge-std works fine with forge update
@@ -81,19 +82,7 @@ Each creator that we onboard gets their own `BattlePass`, `CreatorToken` and `Pa
 - erc20 token takes decimals into account, so to give nice whole numbers, account for that
 - contracts should not allow bad inputs.if this is done properly then the ouput/queries by FE will not have to be checked.
 
-## Development
+## Acknowledgements
 
----
+- Repo structure heavily inspired by [solmate](https://github.com/Rari-Capital/solmate), [femplate](https://github.com/abigger87/femplate), [foundry](https://github.com/foundry-rs/forge-template)
 
-1. This project uses [Foundry](https://getfoundry.sh). See the [book](https://book.getfoundry.sh/getting-started/installation.html) for instructions on how to install and use Foundry.
-2. `main` branch is for production and changes are only merged if all tests + front end integration tests pass.
-3. use feature branches for all other changes
-4. refer to `pull_request_template` when opening a PR
-
-## Repo Structure heavily inspired by:
-
----
-
-- https://github.com/Rari-Capital/solmate
-- https://github.com/abigger87/femplate
-- https://github.com/foundry-rs/forge-template

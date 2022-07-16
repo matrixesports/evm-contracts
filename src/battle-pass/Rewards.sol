@@ -6,8 +6,7 @@ import "solmate/auth/Owned.sol";
 import "solmate/tokens/ERC1155.sol";
 import "openzeppelin-contracts/contracts/utils/Strings.sol";
 
-/// @dev type of reward that can be given out
-/// DO NOT CHANGE ORDERING, web3 service depends on this
+/// @dev DO NOT CHANGE ORDERING, web3 service depends on this
 enum RewardType {
     PREMIUM_PASS,
     CREATOR_TOKEN,
@@ -17,13 +16,11 @@ enum RewardType {
 }
 
 /**
- *  @dev a lootbox takes in multiple LootboxOptions and rewards one to the user
- * rarityRange of 0-1 means that the user has a 10% chance of getting this
- * the rarity range of all lootboxes must add up to be 1
- * the lower bound is inclusive and the upper bound is exclusive
- * ids correspond to the array of ids to give out for this option
- * give qtys[x] of ids[x]
- * ids.length == qtys.length
+ *  @dev a lootbox is a collection of LootboxOptions
+ * rarity is rarityRange[1] - rarityRange[0]
+ * the rarity of all LootboxOptions must add up to 10
+ * rarityRange[0] is inclusive and rarityRange[1] is exclusive
+ * give qtys[x] of ids[x]  (ids.length == qtys.length)
  * if any of the ids is CREATOR_TOKEN_ID then call the creator token contract
  */
 struct LootboxOption {
@@ -32,40 +29,38 @@ struct LootboxOption {
     uint256[] qtys;
 }
 
-/// @dev used when id is not within any of the approved id ranges or is not appropriate for the item
+
+/// @dev use when an id is not within any of the approved id ranges
 error InvalidId(uint256 id);
-/// @dev used when ticket id does not exist
+/// @dev use when a ticket id does not exist
 error TicketIdDoesNotExist(bytes32 ticketId);
-/// @dev used when details for a new lootbox are incorrect
+/// @dev use when the details for a new lootbox are incorrect
 error IncorrectLootboxOptions();
-/// @dev should never be called
+/// @dev fail-safe guard 
 error LOLHowDidYouGetHere(uint256 lootboxId);
-/// @dev used when a non whitelisted address tries to mint or burn
+/// @dev use when a non-whitelisted address attempts to mint or burn
 error NotWhitelisted(address sender);
 
 /**
  * @title Pass Rewards
  * @author rayquaza7
- * @notice mint creator specific tokens, premium passes, lootboxes, nfts, redeemable items, etc.
+ * @notice 
+ * Mint creator specific tokens, premium passes, lootboxes, nfts, redeemable items, etc.
  * @dev
- * ERC1155 is used since it allows for both fungible and non fungible tokens
- * crafting contract, owner and the game contract are allowed to mint burn items for a user
- * ID 0 means empty reward
- * Premium passes: ids 1-999 reserved for issuing premium passes for new seasons.
- * seasons x needs to mint id x in order to give user a premium pass
- * Creator Token: NOT minted by the Battle Pass, it is minted by the creator token contract
- * however, a Battle Pass is allowed to give creator tokens as a reward.
- * So, the creator token whitelists the pass contract and when you want to give out the tokens
- * you specify id CREATOR_TOKEN_ID so that the contract knows that it has to call the token contract
- * Lootbox: ids 1001-9999 reserved for creating new lootboxes, a battle pass can give out new lootboxes as
- * a reward.
- * Redeemable: ids 10,000-19999 reserved for redeemable items. These are items that require manual intervention
- * by a creator
- * Special: ids 20000-29999 reserved for default items like nfts, game items, one off tokens, etc.
- * Currently defined special items:
- * - ids 20,100-20199 reserved for MTX game defender items
- * - ids 20,200-20299 reserved for MTX game attacker items
- * anything bove 30,000 is considered invalid to prevent mistakes
+ * ERC1155 allows for both fungible and non-fungible tokens
+ * Crafting/Game contracts and owner can mint and burn items for a user
+ * | Token ID      | Description                                                                             |
+ * |---------------|-----------------------------------------------------------------------------------------|
+ * | 0             | Empty Reward                                                                            |
+ * | 1-999         | Premium Passes (id === season_id); mint id x to give user a premium pass for season x   |
+ * | 1000          | Creator's token; CreatorToken handles this token.                                       |
+ * |               | Battle Pass is whitelisted to distribute and calls CreatorToken when id === 1000        |
+ * | 1,001-9,999   | Lootboxes                                                                               |
+ * | 10,000-19,999 | Redeemable Items                                                                        |
+ * | 20,000-29,999 | Special NFTs/tokens                                                                     |
+ * | 20,100-20,199 |        MTX-Game: defender items                                                         |
+ * | 20,200-20,299 |        MTX-Game: attacker items                                                         |
+ * | >30000        | Invalid, prevents errors                                                                |
  */
 abstract contract Rewards is ERC1155, Owned {
     /// @dev adddresses that are allowed to mint/burn tokens
@@ -80,7 +75,7 @@ abstract contract Rewards is ERC1155, Owned {
     uint256 public constant SPECIAL_STARTING_ID = 20_000;
     uint256 public constant INVALID_STARTING_ID = 30_000;
 
-    /// @notice whitelist game, crafting and msg.sender
+    /// @notice whitelists game, crafting and msg.sender
     constructor(
         string memory _uri,
         address crafting,
@@ -94,14 +89,16 @@ abstract contract Rewards is ERC1155, Owned {
         creatorTokenCtr = _creatorTokenCtr;
     }
 
-    /// @notice set token contract for creator
+    /// @notice sets the creator token contract 
+    /// @dev only owner can call it
+    /// @param _creatorTokenCtr new creator token contract address
     function setCreatorTokenCtr(address _creatorTokenCtr) public onlyOwner {
         creatorTokenCtr = _creatorTokenCtr;
     }
 
     /// @notice add/remove address from the whitelist
-    /// @param grantPower address to update in whitelist
-    /// @param toggle true if want the address to have mint/burn priv
+    /// @param grantPower address to update permission
+    /// @param toggle to give mint and burn permission
     function togglewhitelisted(address grantPower, bool toggle) external onlyOwner {
         whitelisted[grantPower] = toggle;
     }
@@ -110,11 +107,11 @@ abstract contract Rewards is ERC1155, Owned {
                             WHITELISTED ACTIONS
     //////////////////////////////////////////////////////////////////////*/
 
-    /// @notice allow whitelisted address to mint tokens
-    /// @dev revert if id is invalid
-    /// @param to address to mint to
-    /// @param id id to mint
-    /// @param amount to mint
+    /// @notice allows the whitelisted address to mint tokens
+    /// @dev reverts when id is invalid
+    /// @param to mint to address
+    /// @param id mint id
+    /// @param amount mint amount
     function mint(
         address to,
         uint256 id,
@@ -129,11 +126,11 @@ abstract contract Rewards is ERC1155, Owned {
         }
     }
 
-    /// @notice allow whitelisted address to burn tokens
-    /// @dev revert if id is invalid
-    /// @param from address to burn from
-    /// @param id id to burn
-    /// @param amount to burn
+    /// @notice allows the whitelisted address to burn tokens
+    /// @dev reverts when id is invalid
+    /// @param from burn from address
+    /// @param id burn id
+    /// @param amount burn amount
     function burn(
         address from,
         uint256 id,
@@ -148,17 +145,17 @@ abstract contract Rewards is ERC1155, Owned {
         }
     }
 
-    /// @dev handle mintiting of tokens here since then the token contract
-    /// only needs to whitelist its respective pass contract
-    /// @param to user address to mint to
-    /// @param amount amount to mint
+    /// @notice mints creator tokens 
+    /// @dev must be whitelisted by the CreatorToken
+    /// @param to mint to address
+    /// @param amount mint amount
     function mintCreatorToken(address to, uint256 amount) private {
         ICreatorToken(creatorTokenCtr).mint(to, amount);
     }
 
-    /// @dev handle burning of tokens here since then the token contract
-    /// only needs to whitelist its respective pass contract
-    /// will revert if user does not own sufficient amount of tokens
+    /// @notice burns creator tokens
+    /// @dev must be whitelisted by the CreatorToken
+    /// reverts when a user does NOT own sufficient amount of tokens
     /// @param from user address to burn from
     /// @param amount amount to burn
     function burnCreatorToken(address from, uint256 amount) private {
@@ -169,7 +166,7 @@ abstract contract Rewards is ERC1155, Owned {
                                     UTILS
     //////////////////////////////////////////////////////////////////////*/
 
-    /// @notice check reward type given id
+    /// @notice checks a reward type by id
     function checkType(uint256 id) public pure returns (RewardType) {
         if (id == CREATOR_TOKEN_ID) {
             return RewardType.CREATOR_TOKEN;
@@ -190,18 +187,18 @@ abstract contract Rewards is ERC1155, Owned {
                                 URI
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev uri for this contract
+    /// @dev uri with the format ipfs://
     string public tokenURI;
 
-    /// @notice return uri for an id
-    /// @return string in format ipfs://<uri>/id.json
+    /// @notice returns uri by id
+    /// @return string with the format ipfs://<uri>/id.json
     function uri(uint256 id) public view override returns (string memory) {
         return string.concat(tokenURI, "/", Strings.toString(id), ".json");
     }
 
-    /// @notice set uri for this contract
+    /// @notice sets the uri
     /// @dev only owner can call it
-    /// @param _uri new ipfs hash
+    /// @param _uri new string with the format ipfs://<uri>/
     function setURI(string memory _uri) external onlyOwner {
         tokenURI = _uri;
     }
@@ -209,22 +206,22 @@ abstract contract Rewards is ERC1155, Owned {
     /*//////////////////////////////////////////////////////////////
                             LOOTBOX
     //////////////////////////////////////////////////////////////*/
-
-    /// @dev lootbox id incremented when a new lootbox is created
+    
+    /// @dev lootboxId increments when a new lootbox is created
     uint256 public lootboxId = LOOTBOX_STARTING_ID;
 
-    /// @dev lootbox id-> all options in a lootbox
+    /// @dev lootboxId->[all LootboxOptions]
     mapping(uint256 => LootboxOption[]) internal lootboxRewards;
 
     /**
-     * @notice create a new lootbox
-     * @dev
-     * will revert if prob ranges dont add upto 10
-     * will revert if  if length of ids != length of qtys
-     * will rever if invalid ids are passed to be added
-     * @param options all the options avaliable in a lootbox
-     * @return new lootbox id
-     */
+     * @notice creates a new lootbox
+     * @dev reverts when:
+     *      joint rarity of all LootboxOptions does not add up to 10 
+     *      ids.length != qtys.length 
+     *      ids are invalid 
+     * @param options all the LootboxOptions avaliable in a lootbox
+     * @return new lootboxId 
+    */
     function newLootbox(LootboxOption[] memory options) external onlyOwner returns (uint256) {
         lootboxId++;
         uint256 cumulativeProbability;
@@ -240,11 +237,11 @@ abstract contract Rewards is ERC1155, Owned {
         return lootboxId;
     }
 
-    /// @notice open a lootbox for a user
+    /// @notice opens a lootbox for a user
     /// @dev only owner can call it and user must own lootbox before
-    /// revert if id trying to open is not a lootbox
-    /// @param id id of lootbox trying to open
-    /// @param user trying to open a lootbox
+    /// reverts when id is not a lootbox
+    /// @param id lootboxId to open
+    /// @param user mint lootboxOption rewards to user address
     function openLootbox(uint256 id, address user) public onlyOwner {
         RewardType reward = checkType(id);
         if (reward != RewardType.LOOTBOX) revert InvalidId(id);
@@ -256,10 +253,9 @@ abstract contract Rewards is ERC1155, Owned {
         }
     }
 
-    /// @notice calculate index of a lootbox that a random number falls between
-    /// @dev highly unlikely that a miner will want a creator token
+    /// @notice calculates a pseudorandom index between 0-9
+    /// @dev vulnerable to timing attacks 
     function calculateRandom(uint256 id) public view returns (uint256) {
-        // returns a number between 0-9
         uint256 random = uint256(
             keccak256(
                 abi.encodePacked(msg.sender, block.timestamp, block.number, blockhash(block.number), block.difficulty)
@@ -267,7 +263,7 @@ abstract contract Rewards is ERC1155, Owned {
         ) % 10;
         LootboxOption[] memory options = lootboxRewards[id];
         for (uint256 x; x < options.length; x++) {
-            // lower bound is inclusive but upper isnt
+            // rarityRange[0] is inclusive and rarityRange[1] is exclusive
             if (random >= options[x].rarityRange[0] && random < options[x].rarityRange[1]) {
                 return x;
             }
@@ -275,12 +271,12 @@ abstract contract Rewards is ERC1155, Owned {
         revert LOLHowDidYouGetHere(id);
     }
 
-    /// @notice get lootbox option for a given lootbox and index
+    /// @notice gets a lootboxOption by lootboxId and index
     function getLootboxOptionByIdx(uint256 id, uint256 idx) public view returns (LootboxOption memory option) {
         return lootboxRewards[id][idx];
     }
 
-    /// @notice get number of options in a given lootbox id
+    /// @notice gets a lootboxOptions length by lootboxId
     function getLootboxOptionsLength(uint256 id) public view returns (uint256) {
         return lootboxRewards[id].length;
     }
