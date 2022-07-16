@@ -66,14 +66,10 @@ Each creator that we onboard gets their own `BattlePass`, `CreatorToken` and `Pa
 
 ## Getting started
 
----
-
 1. `yarn all`
 2. setup env variables based on `.sampleenv` file
 
 ## Things to be careful of
-
----
 
 - submodules:
   - solmate, forge-std works fine with forge update
@@ -83,16 +79,12 @@ Each creator that we onboard gets their own `BattlePass`, `CreatorToken` and `Pa
 
 ## Development
 
----
-
 1. This project uses [Foundry](https://getfoundry.sh). See the [book](https://book.getfoundry.sh/getting-started/installation.html) for instructions on how to install and use Foundry.
 2. `main` branch is for production and changes are only merged if all tests + front end integration tests pass.
 3. use feature branches for all other changes
 4. refer to `pull_request_template` when opening a PR
 
 ## Repo Structure heavily inspired by:
-
----
 
 - https://github.com/Rari-Capital/solmate
 - https://github.com/abigger87/femplate
