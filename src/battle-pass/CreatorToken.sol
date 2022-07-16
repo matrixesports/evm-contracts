@@ -15,7 +15,7 @@ error InsufficientBalance(address delegator, uint256 owned, uint256 delegatedAmo
  */
 contract CreatorToken is ERC20, Owned {
     /// @notice addresses that can mint/burn tokens
-    /// @dev whitelists Batlle Pass contract for the creator and msg.sender
+    /// @dev whitelists Battle Pass contract for the creator and msg.sender
     mapping(address => bool) public whitelist;
 
     /// @notice tracks who delegates to whom and how much
@@ -55,7 +55,7 @@ contract CreatorToken is ERC20, Owned {
         delegatedTotal[delegatee] += amount;
     }
 
-    /// @notice undeledelegates the tokens from a delegatee
+    /// @notice undelegates the tokens from a delegatee
     /// @param delegator the address who delegated tokens
     /// @param delegatee the address who recevied the delegated tokens
     /// @param amount the amount of tokens to undelegate

@@ -42,7 +42,6 @@ struct LootboxOption {
     uint256[] qtys;
 }
 
-uint256 constant CREATOR_TOKEN_ID = 1000;
 
 /// @dev use when an id is not within any of the approved id ranges
 error InvalidId(uint256 id);
@@ -70,7 +69,7 @@ error NotWhitelisted(address sender);
  * |               | Battle Pass is whitelisted to distribute and calls CreatorToken when id === 1000        |
  * | 1,001-9,999   | Lootboxes                                                                               |
  * | 10,000-19,999 | Redeemable Items                                                                        |
- * | 20,000-29,999 | Special NFTs/tokens; anything above 30,000 is invalid                                   |
+ * | 20,000-29,999 | Special NFTs/tokens; ids above 30,000 are invalid                                       |
  * | 20,100-20,199 |        MTX-Game: defender items                                                         |
  * | 20,200-20,299 |        MTX-Game: attacker items                                                         |
  */
@@ -199,7 +198,7 @@ abstract contract Rewards is ERC1155, Owned {
                                 URI
     //////////////////////////////////////////////////////////////*/
 
-    /// @dev uri with the format ipfs://<uri>/
+    /// @dev uri with the format ipfs://
     string public tokenURI;
 
     /// @notice returns uri by id

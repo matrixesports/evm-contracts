@@ -9,13 +9,14 @@
 </div>
 
 ## Getting started
-
-1. `yarn all` 
-2. create `.env` file based on `.sampleenv`
-
+ 
+1. 
+```bash
+yarn all
+```
+2. Create `.env` file based on `.sampleenv`
 
 ### Development
----
 
 - This project uses [Foundry](https://getfoundry.sh). See the [book](https://book.getfoundry.sh/getting-started/installation.html) for instructions on how to install and use Foundry.
 - `main` branch is for production only. Changes are merged if all FE integrations and contracts tests pass.
@@ -27,7 +28,6 @@
 Each creator gets their own `BattlePass`, `CreatorToken`, and `Pathfinder` contracts. Most functions use the `onlyOwner` modifier because we pay the gas fees for the users to make the UX seamless.
 
 ### BattlePass
----
 
 - Each creator gets 1 `BattlePass` contract.
 - Battle Pass is a system that rewards users for completing creator-specific quests during established periods known as `seasons`. Experience points or `xp` tracks user progression. The mechanism is similar to the one used in video games. 
@@ -42,7 +42,6 @@ Each creator gets their own `BattlePass`, `CreatorToken`, and `Pathfinder` contr
   - `SPECIAL`: Custom assets, such as one-of-one NFTs, in-game assets, etc.
 
 ### Crafting
----
 
 - Allows users to `craft` new tokens based on a `recipe`.
 - The recipe defines a list of input tokens, known as ingredients, and a list of output tokens. Crafting is then the act of burning the input tokens and minting the output tokens.
@@ -51,7 +50,6 @@ Each creator gets their own `BattlePass`, `CreatorToken`, and `Pathfinder` contr
   - `matic`:
 
 ### CreatorToken
----
 
 - ERC20 token with delegation. The BattlePass contract mints this.
 
@@ -60,7 +58,6 @@ Each creator gets their own `BattlePass`, `CreatorToken`, and `Pathfinder` contr
 - [TODO] 
 
 ### Pathfinder
----
 
 - Clash of clans like game.
 - Each creator community gets their own village with the goal of protecting their Castle in the middle of the village.

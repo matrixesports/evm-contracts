@@ -51,7 +51,6 @@ error RewardAlreadyClaimed(uint256 seasonId, address user);
  * Tracks user progress at each level and across seasons
  * Allows for giving out rewards at specified levels
  * Rewards can be { NFTs, Tokens, Lootboxes, Redeemables }
- * Allows for delegation of tokens to other users in a creator's community
  */
 contract BattlePass is Rewards {
     /// @dev emitted when a new season is created
@@ -107,8 +106,8 @@ contract BattlePass is Rewards {
      * @notice creates a new season
      * @dev only owner can call it
      * @param levelInfo info about each level, levelInfo[0] corresponds to info on a level 0
-     * last level must be (evelInfo.length - 1) and must have xpToCompleteLevel == 0
-     * @return current current active seasonId
+     * last level must be (levelInfo.length - 1) and must have xpToCompleteLevel == 0
+     * @return current active seasonId
      */
     function newSeason(LevelInfo[] calldata levelInfo) external onlyOwner returns (uint256) {
         seasonId++;
