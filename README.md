@@ -10,18 +10,19 @@
 
 ## Getting started
  
-1. 
+### Insalation
+
 ```bash
 yarn all
 ```
-2. Create `.env` file based on `.sampleenv`
-
 ### Development
 
-- This project uses [Foundry](https://getfoundry.sh). See the [book](https://book.getfoundry.sh/getting-started/installation.html) for instructions on how to install and use Foundry.
+- Create `.env` file based on `.sampleenv`
 - `main` branch is for production only. Changes are merged if all FE integrations and contracts tests pass.
 - Use feature branches for all other changes.
 - Refer to `pull_request_template` when opening a PR.
+- You can use the `admincli` to deploy and interact with MTX contracts. See /admincli/readme 
+- This project uses [Foundry](https://getfoundry.sh). See the [book](https://book.getfoundry.sh/getting-started/installation.html) for instructions on how to install and use Foundry.
 
 ## Contracts
 
