@@ -1,5 +1,5 @@
 import { Command, CliUx } from "@oclif/core";
-import { Healper } from "../scripts/healper";
+import { Helper } from "../scripts/helper";
 import { ethers } from "hardhat";
 import { BattlePass, BattlePass__factory, Crafting, Crafting__factory } from "./../types";
 import { LevelInfoStruct } from "../types/src/battle-pass/BattlePass";
@@ -12,7 +12,7 @@ enum ACT {
 }
 export default class Create extends Command {
     static description = "Interacts with deployed contracts";
-    healper = new Healper();
+    helper = new Helper();
     crafting = "0x0000000000000000000000000000000000000000";
     pass = "0x0000000000000000000000000000000000000000";
     blocksToWait = 0;    
@@ -41,7 +41,7 @@ export default class Create extends Command {
             let contract = (await factory.attach(this.pass)) as BattlePass;
             this.log("sending tx to create new season...");
             try {
-                const receipt = await contract.newSeason(await this.createSeason(), await this.healper.getMaticFeeData());
+                const receipt = await contract.newSeason(await this.createSeason(), await this.helper.getMaticFeeData());
                 await ethers.provider.waitForTransaction(receipt.hash, this.blocksToWait);
                 console.log("receipt received");
             } catch (e) {
@@ -57,7 +57,7 @@ export default class Create extends Command {
             let contract = (await factory.attach(this.pass)) as BattlePass;
             this.log("sending tx to create new lootbox...");
             try {
-                const receipt = await contract.newLootbox(await this.createLootbox(), await this.healper.getMaticFeeData());
+                const receipt = await contract.newLootbox(await this.createLootbox(), await this.helper.getMaticFeeData());
                 await ethers.provider.waitForTransaction(receipt.hash, this.blocksToWait);
                 console.log("receipt received");
             } catch (e) {
@@ -86,7 +86,7 @@ export default class Create extends Command {
             let outputIng = await this.createIngredients();
             this.log("sending tx to create new recipe...");
             try {
-                const receipt = await contract.addRecipe(inputIng, outputIng, creator_id, await this.healper.getMaticFeeData());
+                const receipt = await contract.addRecipe(inputIng, outputIng, creator_id, await this.helper.getMaticFeeData());
                 await ethers.provider.waitForTransaction(receipt.hash, this.blocksToWait);
                 console.log("receipt received");
             } catch (e) {
@@ -103,7 +103,7 @@ export default class Create extends Command {
         "SELECT address FROM contract WHERE creator_id=$1 AND ctr_type=$2";
         let res: any;
         try {
-            res = await this.healper.queryDB(queryCommand, [creator_id, ctr_type]);
+            res = await this.helper.queryDB(queryCommand, [creator_id, ctr_type]);
         } catch (e) {
             this.log(`There's no ${ctr_type} contract deployed for creatorId ${creator_id}`);
         }
@@ -232,7 +232,7 @@ export default class Create extends Command {
             if (lookup === 'y') {
                 const queryCommand =
                     "SELECT address, name, creator_id FROM contract WHERE ctr_type='BattlePass'";
-                const query = await this.healper.queryDB(queryCommand, []);
+                const query = await this.helper.queryDB(queryCommand, []);
                 for (const [index, row] of query.rows.entries()) {
                     console.log(`${index + 1}: BattlePass for creatorId ${row.creator_id} and name ${row.name}`);
                 }

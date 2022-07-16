@@ -16,7 +16,7 @@ const pool = new Pool({
     connectionString,
 });
 
-export class Healper {
+export class Helper {
     async verify(address: string, args: string[]) {
         console.log("verifying...");
         await HardhatRuntimeEnvironment.run("verify:verify", {

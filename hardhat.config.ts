@@ -8,13 +8,7 @@ import dotenv from "dotenv";
 dotenv.config();
 let POLYGON_RPC = process.env.POLYGON_RPC;
 let POLYGONSCAN_API_KEY = process.env.POLYGONSCAN_API_KEY;
-
-let PVT_KEY;
-if (process.env.ENV == "dev") {
-  PVT_KEY = process.env.STAGING_PVT_KEY;
-} else {
-  PVT_KEY = process.env.PVT_KEY;
-}
+let PVT_KEY = process.env.PVT_KEY;
 
 function getRemappings() {
   return fs

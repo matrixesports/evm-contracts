@@ -1,13 +1,13 @@
 import { Command, CliUx } from "@oclif/core";
 import { ethers } from "hardhat";
-import { Healper } from "../scripts/healper";
+import { Helper } from "../scripts/helper";
 import { Deployer } from "../scripts/deployer";
 import path from "path";
 import fs from "fs";
 
 export default class Onboard extends Command {
     static description = "Onboarding: deploy CreatorToken and BattlePass, whitelists BattlePass and create season";
-    healper = new Healper();
+    helper = new Helper();
     deployer = new Deployer();
     crafting = "0x0000000000000000000000000000000000000000";
     game = "0x0000000000000000000000000000000000000000";    
@@ -30,7 +30,7 @@ export default class Onboard extends Command {
         await this.dirInit(creator_id);
 
         await CliUx.ux.prompt(`Please upload images to creator/${creator_id}/pass/images.[y]`);
-        const uri = await this.healper.upload(creator_id, "pass", CliUx.ux.prompt);
+        const uri = await this.helper.upload(creator_id, "pass", CliUx.ux.prompt);
 
         this.log("Default crafting address: " + this.crafting);
         let answer = await CliUx.ux.prompt("Do you want to use default crafting address?[y/n]");
@@ -54,7 +54,7 @@ export default class Onboard extends Command {
         dbname = await CliUx.ux.prompt("What's the name for the db entry?");
         this.log("deploying...");
         const pass = await this.deployer.deployBattlePass(creator_id, dbname, uri, this.crafting, this.game);
-        await this.healper.addToBP(pass, dbname, CliUx.ux.prompt);
+        await this.helper.addToBP(pass, dbname, CliUx.ux.prompt);
         this.log("succesfull!");
     }
 

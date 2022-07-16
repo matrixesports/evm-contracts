@@ -273,7 +273,7 @@ abstract contract Rewards is ERC1155, Owned {
      */
     function newLootbox(LootboxOption[] memory options) external onlyOwner returns (uint256) {
         lootboxId++;
-        uint256 cumulativeProbability = 0;
+        uint256 cumulativeProbability;
         for (uint256 x = 0; x < options.length; x++) {
             if (options[x].ids.length != options[x].qtys.length) revert IncorrectLootboxOptions();
             for (uint256 y; y < options[x].ids.length; y++) {

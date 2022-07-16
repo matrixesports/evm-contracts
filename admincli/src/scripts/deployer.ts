@@ -1,8 +1,8 @@
 import { ethers } from "hardhat";
-import { Healper } from "../scripts/healper";
+import { Helper } from "../scripts/helper";
 import { BattlePass__factory, CreatorToken, CreatorToken__factory, Crafting__factory } from "../types";
 export class Deployer {
-    healper = new Healper();
+    helper = new Helper();
     blocksToWait = 0;
 
     constructor() {
@@ -15,7 +15,7 @@ export class Deployer {
         let res;
         let creatorToken;
         try {
-            res = await this.healper.queryDB(queryCommand, [creator_id]);
+            res = await this.helper.queryDB(queryCommand, [creator_id]);
             creatorToken = res.rows[0].address;
         } catch (e) {
             console.log("There's no CreatorToken contract deployed");
@@ -23,11 +23,11 @@ export class Deployer {
         }
 
         let bp_factory = (await ethers.getContractFactory("BattlePass")) as BattlePass__factory;
-        let bp_contract = await bp_factory.deploy(uri, crafting, game, creatorToken, await this.healper.getMaticFeeData());
+        let bp_contract = await bp_factory.deploy(uri, crafting, game, creatorToken, await this.helper.getMaticFeeData());
 
         await ethers.provider.waitForTransaction(bp_contract.deployTransaction.hash, this.blocksToWait); 
         if (process.env.ENV === "prod") {
-            await this.healper.verify(bp_contract.address, [uri, crafting, game, creatorToken]);
+            await this.helper.verify(bp_contract.address, [uri, crafting, game, creatorToken]);
         }
     
         queryCommand = "INSERT INTO contract Values($1,$2,$3,$4,$5,$6)";
@@ -35,17 +35,17 @@ export class Deployer {
             bp_contract.address,
             "matic",
             dbname,
-            this.healper.getABI("BattlePass"),
+            this.helper.getABI("BattlePass"),
             creator_id,
             "BattlePass",
         ];
-        await this.healper.queryDB(queryCommand, queryArgs);
+        await this.helper.queryDB(queryCommand, queryArgs);
 
         let ct_factory = (await ethers.getContractFactory("CreatorToken")) as CreatorToken__factory;
         let ct_contract = (await ct_factory.attach(creatorToken)) as CreatorToken;
 
         try {
-            const receipt = await ct_contract.toggleWhitelist(bp_contract.address, true, await this.healper.getMaticFeeData());
+            const receipt = await ct_contract.toggleWhitelist(bp_contract.address, true, await this.helper.getMaticFeeData());
             await ethers.provider.waitForTransaction(receipt.hash, this.blocksToWait);
             console.log("receipt received");
         } catch (e) {
@@ -59,11 +59,11 @@ export class Deployer {
 
     async deployCreatorToken(creator_id: string, dbname:string, name: string, symbol: string, decimals: string) {
         let factory = (await ethers.getContractFactory("CreatorToken")) as CreatorToken__factory;
-        let contract = await factory.deploy(name, symbol, decimals, ethers.constants.AddressZero, await this.healper.getMaticFeeData());
+        let contract = await factory.deploy(name, symbol, decimals, ethers.constants.AddressZero, await this.helper.getMaticFeeData());
 
         await ethers.provider.waitForTransaction(contract.deployTransaction.hash, this.blocksToWait);
         if (process.env.ENV === "prod") {
-            await this.healper.verify(contract.address, [name, symbol, decimals, ethers.constants.AddressZero]);
+            await this.helper.verify(contract.address, [name, symbol, decimals, ethers.constants.AddressZero]);
         } 
 
         const queryCommand = "INSERT INTO contract Values($1,$2,$3,$4,$5,$6)";
@@ -71,21 +71,21 @@ export class Deployer {
             contract.address,
             "matic",
             dbname,
-            this.healper.getABI("CreatorToken"),
+            this.helper.getABI("CreatorToken"),
             creator_id,
             "CreatorToken",
         ];
-        await this.healper.queryDB(queryCommand, queryArgs);
+        await this.helper.queryDB(queryCommand, queryArgs);
         return contract.address;
     }
 
     async deployCrafting(dbname: string) {
         let factory = (await ethers.getContractFactory("Crafting")) as Crafting__factory;
-        let contract = await factory.deploy(await this.healper.getMaticFeeData());
+        let contract = await factory.deploy(await this.helper.getMaticFeeData());
 
         await ethers.provider.waitForTransaction(contract.deployTransaction.hash, this.blocksToWait); 
         if (process.env.ENV === "prod") {
-            await this.healper.verify(contract.address, []);
+            await this.helper.verify(contract.address, []);
         }
     
         const queryCommand = "INSERT INTO contract Values($1,$2,$3,$4,$5,$6)";
@@ -93,11 +93,11 @@ export class Deployer {
             contract.address,
             "matic",
             dbname,
-            this.healper.getABI("Crafting"),
+            this.helper.getABI("Crafting"),
             "0",
             "Crafting",
         ];
-        await this.healper.queryDB(queryCommand, queryArgs);
+        await this.helper.queryDB(queryCommand, queryArgs);
         return contract.address
     }
 }
