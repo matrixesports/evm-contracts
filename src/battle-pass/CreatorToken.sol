@@ -4,18 +4,24 @@ pragma solidity >=0.8.0;
 import "solmate/auth/Owned.sol";
 import "solmate/tokens/ERC20.sol";
 
-/// @dev used when delagator tries to delegate more than they have or undelegate more than they delegated
+/// @dev use when a delagator tries to delegate more than they own
 error InsufficientBalance(address delegator, uint256 owned, uint256 delegatedAmount);
 
-/// @notice contract for erc20 token specific to the creator with delegation
+/**
+ * @title Creator Token contract
+ * @author rayquaza7
+ * @notice ERC20 creator specific token with delegation capabilities 
+ * @dev
+ */
 contract CreatorToken is ERC20, Owned {
-    /// @dev addresses that can mint/burn tokens
-    /// @dev Pass contract for the creator and msg.sender will be whitelisted
+    /// @notice addresses that can mint/burn tokens
+    /// @dev whitelists Battle Pass contract for the creator and msg.sender
     mapping(address => bool) public whitelist;
 
-    /// @dev delegator->delegatee->amount; track who delegates to whom and how much
+    /// @notice tracks who delegates to whom and how much
+    /// @dev delegator->delegatee->amount
     mapping(address => mapping(address => uint256)) public delegatedBy;
-    /// @dev track total delegated to an address
+    /// @dev tracks the total delegated amount to an address
     mapping(address => uint256) public delegatedTotal;
 
     constructor(
@@ -28,14 +34,14 @@ contract CreatorToken is ERC20, Owned {
         whitelist[msg.sender] = true;
     }
 
-    /// @notice toggle true/false addy in whitelist
+    /// @notice toggles { true, false} for an address in the whitelist
     function toggleWhitelist(address addy, bool toggle) public onlyOwner {
         whitelist[addy] = toggle;
     }
 
-    /// @notice delegate tokens to delegatee
-    /// @param delegator the address delegating tokens
-    /// @param delegatee the address tokens are being delegated to
+    /// @notice delegates tokens to a delegatee
+    /// @param delegator the address delegating the tokens
+    /// @param delegatee the address receiving the delegated tokens
     /// @param amount the amount of tokens to delegate
     function delegate(
         address delegator,
@@ -49,9 +55,9 @@ contract CreatorToken is ERC20, Owned {
         delegatedTotal[delegatee] += amount;
     }
 
-    /// @notice undeledelegate tokens from delegatee
-    /// @param delegator the address that delegated tokens
-    /// @param delegatee the address tokens were delegated to
+    /// @notice undelegates the tokens from a delegatee
+    /// @param delegator the address who delegated tokens
+    /// @param delegatee the address who recevied the delegated tokens
     /// @param amount the amount of tokens to undelegate
     function undelegate(
         address delegator,
@@ -65,13 +71,13 @@ contract CreatorToken is ERC20, Owned {
         delegatedTotal[delegator] -= amount;
     }
 
-    /// @notice enable mint access
+    /// @notice enables mint access
     function mint(address to, uint256 amount) public {
         require(whitelist[msg.sender], "NOT ALLOWED");
         _mint(to, amount);
     }
 
-    /// @notice enable burn access
+    /// @notice enables burn access
     function burn(address from, uint256 amount) public {
         require(whitelist[msg.sender], "NOT ALLOWED");
         _burn(from, amount);

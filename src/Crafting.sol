@@ -4,14 +4,14 @@ pragma solidity >=0.8.0;
 import "./battle-pass/IRewards.sol";
 import "solmate/auth/Owned.sol";
 
-/// @dev used when trying to craft a recipe thats not active
+/// @dev use when crafting with an inactive recipe
 error RecipeNotActive(uint256 recipeId, address user);
-/// @dev used when trying to create recipe with incorrect details
+/// @dev use when creating a new recipe with incorrect ingredients
 error IncorrectRecipeDetails();
 
 /**
  * @dev ingredients for a recipe
- * tokens: list of addresses to add
+ * tokens: list of reward addresses (all ingredients come from Battle Pass contracts) 
  * ids: list of ids
  * qtys: list of qtys
  */
@@ -21,36 +21,43 @@ struct Ingredients {
     uint256[] qtys;
 }
 
-/// @notice Allows a user to burn owned pre defined tokens for new ones
-/// @author rayquaza7
+/**
+ * @title Recipe Contract
+ * @author rayquaza7
+ * @notice Recipes used for crafting
+ * @dev
+ * Recipe is just a list of input and output tokens
+ * User who has all the required input tokens can 'craft' new items.
+ * Ingredients get burn and new items are minted
+ */
 contract Crafting is Owned {
     /// @dev emitted when new recipe is created
     event NewRecipe(uint256 indexed recipeId, uint256 indexed creatorId);
     /// @dev emitted when item is crafted
     event Crafted(uint256 indexed recipeId, address indexed user);
 
-    /// @dev current number of recipes created
+    /// @dev number of created recipes 
     uint256 public recipeId;
     /// @dev creatorId->list of recipes
     mapping(uint256 => uint256[]) public creatorRecipes;
     /// @dev recipe id->input ingredients
     mapping(uint256 => Ingredients) internal inputIngredients;
-    /// @dev recipe id->output ingredients
+    /// @dev recipeId->output ingredients
     mapping(uint256 => Ingredients) internal outputIngredients;
-    /// @dev recipe id->active
+    /// @dev recipeId->active
     mapping(uint256 => bool) public isActive;
 
     constructor() Owned(msg.sender) {}
 
     /**
-     * @notice create a new recipe
+     * @notice creates a new recipe
      * @dev assumes that the ids you are adding are valid based on the spec in BattlePass.sol
-     * will revert if length of ids is not equal to length of ids and tokens
-     * assume that all ids are valid
+     * reverts when: 
+     *      ids are invalid
+     *      ids.length != qtys.length for both input and output tokens
      * @param input ingredients
      * @param output ingredients
-     * @param creatorId creator the recipe belongs to
-     * @return recipe id
+     * @return recipeId
      */
     function addRecipe(
         Ingredients calldata input,
@@ -78,11 +85,12 @@ contract Crafting is Owned {
     }
 
     /**
-     * @notice craft new items based on given recipe id
-     * @dev revert if user does not own input items
-     * revert if recipe is not active
-     * @param _recipeId given recipe id
-     * @param user address of user
+     * @notice crafts new items by recipeId
+     * @dev reverts when:
+     *      user does not own the input items
+     *      recipe is not active
+     * @param _recipeId recipeId
+     * @param user address to mint output tokens to
      */
     function craft(uint256 _recipeId, address user) external onlyOwner {
         if (!isActive[_recipeId]) revert RecipeNotActive(_recipeId, user);
@@ -98,17 +106,17 @@ contract Crafting is Owned {
         emit Crafted(_recipeId, user);
     }
 
-    /// @notice toggle recipe on or off
+    /// @notice toggles a recipe on or off
     function toggleRecipe(uint256 _recipeId, bool toggle) public onlyOwner {
         isActive[_recipeId] = toggle;
     }
 
-    /// @notice get input ingredients for a recipe id
+    /// @notice gets input ingredients for a recipe id
     function getInputIngredients(uint256 _recipeId) public view returns (Ingredients memory) {
         return inputIngredients[_recipeId];
     }
 
-    /// @notice get output ingredients for a recipe id
+    /// @notice gets output ingredients for a recipe id
     function getOutputIngredients(uint256 _recipeId) public view returns (Ingredients memory) {
         return outputIngredients[_recipeId];
     }
