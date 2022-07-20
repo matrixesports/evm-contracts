@@ -74,7 +74,7 @@ abstract contract Rewards is ERC1155, Owned {
     uint256 public constant SPECIAL_STARTING_ID = 20_000;
     uint256 public constant INVALID_STARTING_ID = 30_000;
 
-    event LootboxOpened(uint256 indexed lootboxId, uint256 indexed idOpened, address indexed user);
+    event LootboxOpened(uint256 indexed lootboxId, uint256 indexed idxOpened, address indexed user);
 
     /// @notice whitelists game, crafting and msg.sender
     constructor(
