@@ -9,10 +9,10 @@ contract DevScript is Script {
 
     function run() public {
         vm.startBroadcast();
-        // token = new SoupcansNFT("ipfs://QmdFYm5TLuBDKgMXKt8zVem2LNQiUGyCgrmxf5F9zRYntL/");
-        token = SoupcansNFT(payable(0x1BdcA566E7097E4b45e82d3BC6298ADefD537245));
+        token = new SoupcansNFT("ipfs://Qmd5fxbqFVwSMEvwW3fDCgpeNAd7zvoaWNi37Xd7AvDbLN/");
+        // token = SoupcansNFT(payable(0x1BdcA566E7097E4b45e82d3BC6298ADefD537245));
         //mint private
-        token.mintForAuction();
+        // token.mintForAuction();
         // token.mintForAuction();
         // token.mintForAuction();
         // token.mintForAuction();
