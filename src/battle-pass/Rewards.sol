@@ -29,14 +29,13 @@ struct LootboxOption {
     uint256[] qtys;
 }
 
-
 /// @dev use when an id is not within any of the approved id ranges
 error InvalidId(uint256 id);
 /// @dev use when a ticket id does not exist
 error TicketIdDoesNotExist(bytes32 ticketId);
 /// @dev use when the details for a new lootbox are incorrect
 error IncorrectLootboxOptions();
-/// @dev fail-safe guard 
+/// @dev fail-safe guard
 error LOLHowDidYouGetHere(uint256 lootboxId);
 /// @dev use when a non-whitelisted address attempts to mint or burn
 error NotWhitelisted(address sender);
@@ -44,7 +43,7 @@ error NotWhitelisted(address sender);
 /**
  * @title Pass Rewards
  * @author rayquaza7
- * @notice 
+ * @notice
  * Mint creator specific tokens, premium passes, lootboxes, nfts, redeemable items, etc.
  * @dev
  * ERC1155 allows for both fungible and non-fungible tokens
@@ -75,6 +74,8 @@ abstract contract Rewards is ERC1155, Owned {
     uint256 public constant SPECIAL_STARTING_ID = 20_000;
     uint256 public constant INVALID_STARTING_ID = 30_000;
 
+    event LootboxOpened(uint256 indexed lootboxId, uint256 indexed idOpened, address indexed user);
+
     /// @notice whitelists game, crafting and msg.sender
     constructor(
         string memory _uri,
@@ -89,7 +90,7 @@ abstract contract Rewards is ERC1155, Owned {
         creatorTokenCtr = _creatorTokenCtr;
     }
 
-    /// @notice sets the creator token contract 
+    /// @notice sets the creator token contract
     /// @dev only owner can call it
     /// @param _creatorTokenCtr new creator token contract address
     function setCreatorTokenCtr(address _creatorTokenCtr) public onlyOwner {
@@ -145,7 +146,7 @@ abstract contract Rewards is ERC1155, Owned {
         }
     }
 
-    /// @notice mints creator tokens 
+    /// @notice mints creator tokens
     /// @dev must be whitelisted by the CreatorToken
     /// @param to mint to address
     /// @param amount mint amount
@@ -206,7 +207,7 @@ abstract contract Rewards is ERC1155, Owned {
     /*//////////////////////////////////////////////////////////////
                             LOOTBOX
     //////////////////////////////////////////////////////////////*/
-    
+
     /// @dev lootboxId increments when a new lootbox is created
     uint256 public lootboxId = LOOTBOX_STARTING_ID;
 
@@ -216,12 +217,12 @@ abstract contract Rewards is ERC1155, Owned {
     /**
      * @notice creates a new lootbox
      * @dev reverts when:
-     *      joint rarity of all LootboxOptions does not add up to 10 
-     *      ids.length != qtys.length 
-     *      ids are invalid 
+     *      joint rarity of all LootboxOptions does not add up to 10
+     *      ids.length != qtys.length
+     *      ids are invalid
      * @param options all the LootboxOptions avaliable in a lootbox
-     * @return new lootboxId 
-    */
+     * @return new lootboxId
+     */
     function newLootbox(LootboxOption[] memory options) external onlyOwner returns (uint256) {
         lootboxId++;
         uint256 cumulativeProbability;
@@ -251,10 +252,11 @@ abstract contract Rewards is ERC1155, Owned {
         for (uint256 x; x < option.ids.length; x++) {
             mint(user, option.ids[x], option.qtys[x]);
         }
+        emit LootboxOpened(id, idx, user);
     }
 
     /// @notice calculates a pseudorandom index between 0-9
-    /// @dev vulnerable to timing attacks 
+    /// @dev vulnerable to timing attacks
     function calculateRandom(uint256 id) public view returns (uint256) {
         uint256 random = uint256(
             keccak256(
