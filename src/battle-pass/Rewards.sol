@@ -18,7 +18,7 @@ enum RewardType {
 /**
  *  @dev a lootbox is a collection of LootboxOptions
  * rarity is rarityRange[1] - rarityRange[0]
- * the rarity of all LootboxOptions must add up to 10
+ * the rarity of all LootboxOptions must add up to 100
  * rarityRange[0] is inclusive and rarityRange[1] is exclusive
  * give qtys[x] of ids[x]  (ids.length == qtys.length)
  * if any of the ids is CREATOR_TOKEN_ID then call the creator token contract
@@ -217,7 +217,7 @@ abstract contract Rewards is ERC1155, Owned {
     /**
      * @notice creates a new lootbox
      * @dev reverts when:
-     *      joint rarity of all LootboxOptions does not add up to 10
+     *      joint rarity of all LootboxOptions does not add up to 100
      *      ids.length != qtys.length
      *      ids are invalid
      * @param options all the LootboxOptions avaliable in a lootbox
@@ -233,7 +233,7 @@ abstract contract Rewards is ERC1155, Owned {
             cumulativeProbability += options[x].rarityRange[1] - options[x].rarityRange[0];
             lootboxRewards[lootboxId].push(options[x]);
         }
-        if (cumulativeProbability != 10) revert IncorrectLootboxOptions();
+        if (cumulativeProbability != 100) revert IncorrectLootboxOptions();
         lootboxId++;
         return lootboxId;
     }
@@ -255,14 +255,14 @@ abstract contract Rewards is ERC1155, Owned {
         emit LootboxOpened(id, idx, user);
     }
 
-    /// @notice calculates a pseudorandom index between 0-9
+    /// @notice calculates a pseudorandom index between 0-99
     /// @dev vulnerable to timing attacks
     function calculateRandom(uint256 id) public view returns (uint256) {
         uint256 random = uint256(
             keccak256(
                 abi.encodePacked(msg.sender, block.timestamp, block.number, blockhash(block.number), block.difficulty)
             )
-        ) % 10;
+        ) % 100;
         LootboxOption[] memory options = lootboxRewards[id];
         for (uint256 x; x < options.length; x++) {
             // rarityRange[0] is inclusive and rarityRange[1] is exclusive
