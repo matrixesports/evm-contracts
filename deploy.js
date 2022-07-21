@@ -20,7 +20,7 @@ async function main() {
   let args;
   let abi;
   let ctr_type;
-  let creator_id = 17;
+  let creator_id = 25;
 
   // name = "Recipe";
   // args = [""];
@@ -32,15 +32,21 @@ async function main() {
   // await addtodb(recipe_addy, "matic", name, creator_id, abi, ctr_type);
   // console.log("gg");
 
-  name = "Pass";
-  args = ["", recipe_addy];
+  name = "BattlePass";
+  args = [
+    "ipfs://QmSaH8G32yjYDabsR4YPchycsbofUt9KyGaJS1RvT21kdq",
+    recipe_addy,
+    recipe_addy,
+    recipe_addy,
+  ];
   abi = getABI(name);
-  ctr_type = name;
+  ctr_type = "BATTLE_PASS";
   console.log("deploying...");
-  let passAddress = await deploy(name, args);
-  // let passAddress = "0x462f49a4442AD6925A6c20D22EEE5c87Cd0fDFE1";
-  await verify(passAddress, args);
-  await addtodb(passAddress, "matic", name, creator_id, abi, ctr_type);
+  //   let passAddress = await deploy(name, args);
+  let passAddress = "0x8d8631397A54d277E3b3F545D2b2c828e0074638";
+  //   await verify(passAddress, args);
+  //   await addtodb(passAddress, "matic", name, abi, creator_id, ctr_type);
+  console.log(await getMaticFeeData());
   console.log("gg");
   // let passAddress = "0x80e00860CF0749A0247785A4bC9E933b20251AFc";
 
@@ -60,14 +66,14 @@ async function main() {
   // await addtodb(address, "matic", name, creator_id, abi, ctr_type);
   // console.log("gg");
 
-  name = "Redeemable";
-  args = ["ipfs://QmX1TekzfXg2TfP1UUBVesSEvkXvw31zjQUcerfgdgVw8a", passAddress, recipe_addy];
-  abi = getABI(name);
-  ctr_type = name;
-  let address = await deploy(name, args);
-  await verify(address, args);
-  await addtodb(address, "matic", name, creator_id, abi, ctr_type);
-  console.log("gg");
+  //   name = "Redeemable";
+  //   args = ["ipfs://QmX1TekzfXg2TfP1UUBVesSEvkXvw31zjQUcerfgdgVw8a", passAddress, recipe_addy];
+  //   abi = getABI(name);
+  //   ctr_type = name;
+  //   let address = await deploy(name, args);
+  //   await verify(address, args);
+  //   await addtodb(address, "matic", name, abi, creator_id, "BATTLE_PASS");
+  //   console.log("gg");
 }
 
 async function deploy(name, args) {
@@ -87,13 +93,13 @@ async function verify(address, args) {
   });
   console.log("verified...");
 }
-async function addtodb(address, network, name, creator_id, abi, ctr_type) {
+async function addtodb(address, network, name, abi, creator_id, ctr_type) {
   console.log("adding...");
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
     const queryText = "INSERT INTO contract Values($1,$2,$3,$4,$5,$6)";
-    const query_args = [address, network, name, creator_id, abi, ctr_type];
+    const query_args = [address, network, name, abi, creator_id, ctr_type];
     await client.query(queryText, query_args);
     await client.query("COMMIT");
   } catch (e) {
