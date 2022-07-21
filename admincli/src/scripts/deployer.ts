@@ -37,7 +37,7 @@ export class Deployer {
             dbname,
             this.helper.getABI("BattlePass"),
             creator_id,
-            "BattlePass",
+            "BATTLE_PASS",
         ];
         await this.helper.queryDB(queryCommand, queryArgs);
 
@@ -73,7 +73,7 @@ export class Deployer {
             dbname,
             this.helper.getABI("CreatorToken"),
             creator_id,
-            "CreatorToken",
+            "CREATOR_TOKEN",
         ];
         await this.helper.queryDB(queryCommand, queryArgs);
         return contract.address;
@@ -95,7 +95,7 @@ export class Deployer {
             dbname,
             this.helper.getABI("Crafting"),
             "0",
-            "Crafting",
+            "CRAFTING",
         ];
         await this.helper.queryDB(queryCommand, queryArgs);
         return contract.address
