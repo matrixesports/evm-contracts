@@ -2,6 +2,7 @@ const hre = require("hardhat");
 const { Pool } = require("pg");
 const axios = require("axios");
 const dotenv = require("dotenv");
+const { ethers } = require("hardhat");
 dotenv.config();
 
 let connectionString;
@@ -16,64 +17,23 @@ const pool = new Pool({
 });
 
 async function main() {
-  let name;
-  let args;
-  let abi;
-  let ctr_type;
-  let creator_id = 25;
+  let creator_id = 12;
 
-  // name = "Recipe";
-  // args = [""];
-  // abi = getABI(name);
-  // ctr_type = name;
-  // // let recipe_addy = await deploy(name, args);
-  let recipe_addy = "0x34df2ad1fb25a8Ef566847Bc16C7b9d626482487";
-  // await verify(recipe_addy, args);
-  // await addtodb(recipe_addy, "matic", name, creator_id, abi, ctr_type);
-  // console.log("gg");
-
-  name = "BattlePass";
   args = [
     "ipfs://QmSaH8G32yjYDabsR4YPchycsbofUt9KyGaJS1RvT21kdq",
-    recipe_addy,
-    recipe_addy,
-    recipe_addy,
+    ethers.constants.AddressZero(),
+    ethers.constants.AddressZero(),
+    ethers.constants.AddressZero(),
   ];
-  abi = getABI(name);
-  ctr_type = "BATTLE_PASS";
+  abi = getABI("BattlePass");
   console.log("deploying...");
-  //   let passAddress = await deploy(name, args);
-  let passAddress = "0x8d8631397A54d277E3b3F545D2b2c828e0074638";
-  //   await verify(passAddress, args);
-  //   await addtodb(passAddress, "matic", name, abi, creator_id, ctr_type);
-  console.log(await getMaticFeeData());
+  let passAddress = await deploy("BattlePass", args);
+  await verify(passAddress, args);
+  let name = "RocketCR";
+  let description = "Clash Royale Streamer";
+  await addtodb(passAddress, "matic", name, abi, creator_id, "BATTLE_PASS");
+  await addtopassdb(passAddress, name, description);
   console.log("gg");
-  // let passAddress = "0x80e00860CF0749A0247785A4bC9E933b20251AFc";
-
-  // name = "Lootbox";
-  // args = [
-  //     "",
-  //     passAddress,
-  //     recipe_addy,
-  //     85,
-  //     "0xAE975071Be8F8eE67addBC1A82488F1C24858067",
-  //     "0x6e099d640cde6de9d40ac749b4b594126b0169747122711109c9985d47751f93",
-  // ];
-  // abi = getABI(name);
-  // ctr_type = name;
-  // let address = await deploy(name, args);
-  // await verify(address, args);
-  // await addtodb(address, "matic", name, creator_id, abi, ctr_type);
-  // console.log("gg");
-
-  //   name = "Redeemable";
-  //   args = ["ipfs://QmX1TekzfXg2TfP1UUBVesSEvkXvw31zjQUcerfgdgVw8a", passAddress, recipe_addy];
-  //   abi = getABI(name);
-  //   ctr_type = name;
-  //   let address = await deploy(name, args);
-  //   await verify(address, args);
-  //   await addtodb(address, "matic", name, abi, creator_id, "BATTLE_PASS");
-  //   console.log("gg");
 }
 
 async function deploy(name, args) {
@@ -93,6 +53,43 @@ async function verify(address, args) {
   });
   console.log("verified...");
 }
+
+async function addtopassdb(
+  address,
+  name,
+  description,
+  price,
+  currency,
+  end_date,
+  required_user_payment_options,
+  required_user_social_options
+) {
+  console.log("adding...");
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const queryText = "INSERT INTO battlepass Values($1,$2,$3,$4,$5,$6,$7,$8)";
+    const query_args = [
+      address,
+      name,
+      description,
+      price,
+      currency,
+      end_date,
+      required_user_payment_options,
+      required_user_social_options,
+    ];
+    await client.query(queryText, query_args);
+    await client.query("COMMIT");
+  } catch (e) {
+    await client.query("ROLLBACK");
+    throw e;
+  } finally {
+    client.release();
+  }
+  console.log("added...");
+}
+
 async function addtodb(address, network, name, abi, creator_id, ctr_type) {
   console.log("adding...");
   const client = await pool.connect();
