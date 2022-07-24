@@ -1,3 +1,4 @@
+import { CliUx } from "@oclif/core";
 import { ethers } from "hardhat";
 import { Helper } from "../scripts/helper";
 import { BattlePass__factory, CreatorToken, CreatorToken__factory, Crafting__factory } from "../types";
@@ -11,15 +12,22 @@ export class Deployer {
 
     async deployBattlePass(creator_id: string, dbname: string, uri: string, crafting: string, game: string) {
         let queryCommand =
-        "SELECT address FROM contract WHERE creator_id=$1 AND ctr_type='CreatorToken'";
+        "SELECT address FROM contract WHERE creator_id=$1 AND ctr_type='CREATOR_TOKEN'";
         let res;
-        let creatorToken;
+        let creatorToken = ethers.constants.AddressZero;
         try {
             res = await this.helper.queryDB(queryCommand, [creator_id]);
             creatorToken = res.rows[0].address;
         } catch (e) {
             console.log("There's no CreatorToken contract deployed");
-            process.exit(1);
+            let answer = await CliUx.ux.prompt("Do you want to set a CreatorToken address?[y/n]");
+            if (answer === 'y') {
+                creatorToken = await CliUx.ux.prompt("What's the address of the game contract?");
+                if (!ethers.utils.isAddress(creatorToken)) {
+                    console.log("Please enter a valid ETH address");
+                    process.exit(1);
+                }
+            }
         }
 
         let bp_factory = (await ethers.getContractFactory("BattlePass")) as BattlePass__factory;
@@ -41,19 +49,18 @@ export class Deployer {
         ];
         await this.helper.queryDB(queryCommand, queryArgs);
 
-        let ct_factory = (await ethers.getContractFactory("CreatorToken")) as CreatorToken__factory;
-        let ct_contract = (await ct_factory.attach(creatorToken)) as CreatorToken;
-
-        try {
-            const receipt = await ct_contract.toggleWhitelist(bp_contract.address, true, await this.helper.getMaticFeeData());
-            await ethers.provider.waitForTransaction(receipt.hash, this.blocksToWait);
-            console.log("receipt received");
-        } catch (e) {
-            console.log("tx failed!!!");
-            console.log(e);
-            process.exit(1);
+        if (!(creatorToken === ethers.constants.AddressZero)) {
+            let ct_factory = (await ethers.getContractFactory("CreatorToken")) as CreatorToken__factory;
+            let ct_contract = (await ct_factory.attach(creatorToken)) as CreatorToken;
+            try {
+                const receipt = await ct_contract.toggleWhitelist(bp_contract.address, true, await this.helper.getMaticFeeData());
+                await ethers.provider.waitForTransaction(receipt.hash, this.blocksToWait);
+                console.log("receipt received");
+            } catch (e) {
+                console.log("tx failed!!!");
+                console.log(e);
+            }
         }
-
         return bp_contract.address
     }
 

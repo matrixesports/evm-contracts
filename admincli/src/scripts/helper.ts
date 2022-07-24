@@ -5,13 +5,7 @@ import FormData from "form-data";
 import path from "path";
 import fs from "fs";
 
-let connectionString: string;
-if (process.env.ENV == "dev") {
-    connectionString = process.env.STAGING_RAILWAY_URL!;
-} else {
-    connectionString = process.env.RAILWAY_URL!;
-}
-
+let connectionString = process.env.RAILWAY_URL!;
 const pool = new Pool({
     connectionString,
 });
@@ -125,7 +119,8 @@ export class Helper {
             [1, "INSTAGRAM_USERNAME"],
             [2, "TWITTER_USERNAME"],
             [3, "TWITCH_USERNAME"],
-            [4, "CLASH_USERNAME"]
+            [4, "CLASH_USERNAME"],
+            [5, "PREFERRED_SOCIAL"],
         ]);
         let paymentOptions = new Map<number, string>([
             [1, "CASHAPP"],
@@ -146,7 +141,7 @@ export class Helper {
         while(counter < socialOptions.size && more === 'y') {
             let selector = parseInt(await
                 CliUx(
-                    "Available social options:\n1: INSTAGRAM USERNAME\n2: TWITTER USERNAME\n3: TWITCH_USERNAME\n4: CLASH USERNAME\nPlease option"
+                    "Available social options:\n1: INSTAGRAM USERNAME\n2: TWITTER USERNAME\n3: TWITCH_USERNAME\n4: CLASH USERNAME\n5: PREFERRED_SOCIAL\nPlease option"
                 )
             );
             if (isNaN(selector) || selector < 1 || selector > socialOptions.size) {

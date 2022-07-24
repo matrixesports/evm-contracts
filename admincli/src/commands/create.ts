@@ -4,7 +4,6 @@ import { ethers } from "hardhat";
 import { BattlePass, BattlePass__factory, Crafting, Crafting__factory } from "./../types";
 import { LevelInfoStruct } from "../types/src/battle-pass/BattlePass";
 import { LootboxOptionStruct } from "../types/src/battle-pass/Rewards";
-
 enum ACT {
     Season = 1,
     Lootbox = 2,
@@ -15,8 +14,7 @@ export default class Create extends Command {
     helper = new Helper();
     crafting = "0x0000000000000000000000000000000000000000";
     pass = "0x0000000000000000000000000000000000000000";
-    blocksToWait = 0;    
-
+    blocksToWait = 0;
     public async run(): Promise<void> {
         if (process.env.ENV === "prod") { this.blocksToWait = 5; }
         const action = parseInt(
@@ -36,7 +34,7 @@ export default class Create extends Command {
         }
 
         if (action === ACT.Season) {
-            this.pass = await this.getContractAddress("BattlePass", creator_id);
+            this.pass = await this.getContractAddress("BATTLE_PASS", creator_id);
             let factory = (await ethers.getContractFactory("BattlePass")) as BattlePass__factory;
             let contract = (await factory.attach(this.pass)) as BattlePass;
             this.log("sending tx to create new season...");
@@ -52,7 +50,7 @@ export default class Create extends Command {
             this.log("Season created");
         }
         if (action === ACT.Lootbox) {
-            this.pass = await this.getContractAddress("BattlePass", creator_id);
+            this.pass = await this.getContractAddress("BATTLE_PASS", creator_id);
             let factory = (await ethers.getContractFactory("BattlePass")) as BattlePass__factory;
             let contract = (await factory.attach(this.pass)) as BattlePass;
             this.log("sending tx to create new lootbox...");
@@ -68,7 +66,7 @@ export default class Create extends Command {
             this.log("Lootbox created");
         }
         if (action === ACT.Recipe) {
-            this.pass = await this.getContractAddress("BattlePass", creator_id);
+            this.pass = await this.getContractAddress("BATTLE_PASS", creator_id);
             this.log("Default crafting address: " + this.crafting);
             let answer = await CliUx.ux.prompt("Do you want to use default crafting address?[y/n]");
             if (answer === 'n') {
@@ -179,10 +177,11 @@ export default class Create extends Command {
         let lootboxOptions: LootboxOptionStruct[] = [];
         let jointprob = 0;
         let counter = 1;
-        while (jointprob < 10) {
+        let maxProb = 100
+        while (jointprob < maxProb) {
             this.log(`Creating lootboxOption ${counter}...`)
-            const rarity = parseInt(await CliUx.ux.prompt(`Max available rarity ${10 - jointprob}\nWhat's the rarity for this option?`));
-            if (isNaN(rarity) || rarity < 0 || rarity > (10 - jointprob)) {
+            const rarity = parseInt(await CliUx.ux.prompt(`Max available rarity ${maxProb - jointprob}\nWhat's the rarity for this option?`));
+            if (isNaN(rarity) || rarity < 0 || rarity > (maxProb - jointprob)) {
                 this.log("Please enter a valid number");
                 process.exit(1);
             }
