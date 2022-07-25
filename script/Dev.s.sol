@@ -10,8 +10,8 @@ contract DevScript is Script {
 
     function run() public {
         vm.startBroadcast();
-        BattlePass pass = BattlePass(0x8d8631397A54d277E3b3F545D2b2c828e0074638);
-        console.log(pass.getLootboxOptionsLength(1001));
+        BattlePass pass = BattlePass(0x7Fe677f2CbD414F8E8e963a88d1dDaCD4fc033bd);
+        pass.mint(0x136E461a56dDA46A1fbA60e773799A797f8C4395, pass.seasonId(), 1);
 
         // // token = new SoupcansNFT("ipfs://Qmd5fxbqFVwSMEvwW3fDCgpeNAd7zvoaWNi37Xd7AvDbLN/");
         // token = SoupcansNFT(payable(0xA3BA0b27cfC458eeEd970E71AEa9C51C1c56CFd2));

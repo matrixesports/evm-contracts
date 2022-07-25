@@ -19,21 +19,41 @@ const pool = new Pool({
 async function main() {
   let creator_id = 12;
 
-  args = [
-    "ipfs://QmSaH8G32yjYDabsR4YPchycsbofUt9KyGaJS1RvT21kdq",
-    ethers.constants.AddressZero(),
-    ethers.constants.AddressZero(),
-    ethers.constants.AddressZero(),
-  ];
-  abi = getABI("BattlePass");
-  console.log("deploying...");
-  let passAddress = await deploy("BattlePass", args);
-  await verify(passAddress, args);
-  let name = "RocketCR";
-  let description = "Clash Royale Streamer";
-  await addtodb(passAddress, "matic", name, abi, creator_id, "BATTLE_PASS");
-  await addtopassdb(passAddress, name, description);
-  console.log("gg");
+  //   args = [
+  //     "ipfs://QmRhxn2VDcuzcsoAW3EojCumSncLUxk5fZUfecjxEZZWAt",
+  //     ethers.constants.AddressZero,
+  //     ethers.constants.AddressZero,
+  //     ethers.constants.AddressZero,
+  //   ];
+
+  //   console.log("deploying...");
+  //   let passAddress = await deploy("BattlePass", args);
+  //   await verify(passAddress, args);
+  let passAddress = "0x2697B92eE8231d59d4f73971279C86a03FF1fe3D";
+
+  //   passAddress = ethers.utils.getAddress(passAddress);
+  //   let name = "RocketCR";
+  //   let description = "Clash Royale Streamer";
+  //   let abi = getABI("BattlePass");
+  //   //   await addtodb(passAddress, "matic", name, abi, creator_id, "BATTLE_PASS");
+  //   let date = new Date();
+  //   await addtopassdb(
+  //     passAddress,
+  //     name,
+  //     description,
+  //     "4.99",
+  //     "USD",
+  //     date,
+  //     ["CASHAPP", "PAYPAL_EMAIL", "VENMO_USERNAME"],
+  //     [
+  //       "INSTAGRAM_USERNAME",
+  //       "TWITTER_USERNAME",
+  //       "TWITCH_USERNAME",
+  //       "CLASH_USERNAME",
+  //       "PREFERRED_SOCIAL",
+  //     ]
+  //   );
+  //   console.log("gg");
 }
 
 async function deploy(name, args) {
@@ -76,8 +96,8 @@ async function addtopassdb(
       price,
       currency,
       end_date,
-      required_user_payment_options,
       required_user_social_options,
+      required_user_payment_options,
     ];
     await client.query(queryText, query_args);
     await client.query("COMMIT");
@@ -96,7 +116,7 @@ async function addtodb(address, network, name, abi, creator_id, ctr_type) {
   try {
     await client.query("BEGIN");
     const queryText = "INSERT INTO contract Values($1,$2,$3,$4,$5,$6)";
-    const query_args = [address, network, name, abi, creator_id, ctr_type];
+    const query_args = [address, network, name, creator_id, abi, ctr_type];
     await client.query(queryText, query_args);
     await client.query("COMMIT");
   } catch (e) {

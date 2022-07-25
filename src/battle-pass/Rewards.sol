@@ -74,7 +74,7 @@ abstract contract Rewards is ERC1155, Owned {
     uint256 public constant SPECIAL_STARTING_ID = 20_000;
     uint256 public constant INVALID_STARTING_ID = 30_000;
 
-    event LootboxOpened(uint256 indexed lootboxId, uint256 indexed idxOpened, address indexed user);
+    event LootboxOpened(uint256 indexed idxOpened);
 
     /// @notice whitelists game, crafting and msg.sender
     constructor(
@@ -235,33 +235,29 @@ abstract contract Rewards is ERC1155, Owned {
         }
         if (cumulativeProbability != 100) revert IncorrectLootboxOptions();
         lootboxId++;
-        return lootboxId;
+        return lootboxId - 1;
     }
 
     /// @notice opens a lootbox for a user
     /// @dev only owner can call it and user must own lootbox before
-    /// reverts when id is not a lootbox
+    /// assume id youre tryna open is a lootbox
     /// @param id lootboxId to open
     /// @param user mint lootboxOption rewards to user address
     function openLootbox(uint256 id, address user) public onlyOwner {
-        RewardType reward = checkType(id);
-        if (reward != RewardType.LOOTBOX) revert InvalidId(id);
         _burn(user, id, 1);
         uint256 idx = calculateRandom(id);
         LootboxOption memory option = lootboxRewards[id][idx];
         for (uint256 x; x < option.ids.length; x++) {
             mint(user, option.ids[x], option.qtys[x]);
         }
-        emit LootboxOpened(id, idx, user);
+        emit LootboxOpened(idx);
     }
 
     /// @notice calculates a pseudorandom index between 0-99
     /// @dev vulnerable to timing attacks
     function calculateRandom(uint256 id) public view returns (uint256) {
         uint256 random = uint256(
-            keccak256(
-                abi.encodePacked(msg.sender, block.timestamp, block.number, blockhash(block.number), block.difficulty)
-            )
+            keccak256(abi.encodePacked(block.timestamp, blockhash(block.number), block.difficulty))
         ) % 100;
         LootboxOption[] memory options = lootboxRewards[id];
         for (uint256 x; x < options.length; x++) {
