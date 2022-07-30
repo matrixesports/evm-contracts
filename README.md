@@ -41,7 +41,6 @@ yarn all
 ```
 ### Development
 
-- Create `.env` file based on `.sampleenv`
 - `main` branch is for production only. Changes are merged if all FE integrations and contracts tests pass.
 - Use feature branches for all other changes.
 - Refer to `pull_request_template` when opening a PR.

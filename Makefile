@@ -20,6 +20,6 @@ execute_rinkeby	:; forge script $(file) --rpc-url $(RINKEBY_RPC) --private-key $
 execute_mainnet	:; forge script $(file) --rpc-url $(MAINNET_RPC) --private-key $(PVT_KEY) --etherscan-api-key $(ETHERSCAN_API_KEY) --verify --broadcast --slow --sig $(sig)
 
 
-install 		:; foundryup && forge install && yarn install && npx hardhat clean && npx hardhat compile && forge build
+install 		:; foundryup && forge install && yarn install
 lint    		:; prettier --write src/**/*.sol && prettier --write src/*.sol
 
