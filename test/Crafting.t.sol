@@ -7,8 +7,9 @@ import "forge-std/Test.sol";
 
 contract CraftingTest is Test {
     Crafting crafting;
-    Ingredients input;
+
     uint256 inputLength = 3;
+    Ingredients input;
     Ingredients output;
     address mockUser = address(1);
 
