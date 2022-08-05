@@ -1,0 +1,33 @@
+name: Tests
+
+on: [push, pull_request]
+
+env:
+    FOUNDRY_PROFILE: intense
+
+jobs:
+    tests:
+        name: Tests with Foundry
+        runs-on: ubuntu-latest
+
+        steps:
+            - uses: actions/checkout@v2
+              with:
+                  submodules: recursive
+
+            - name: Install Foundry
+              uses: foundry-rs/foundry-toolchain@v1
+              with:
+                  version: nightly
+
+            - name: Run Forge build
+              run: forge build
+
+            - name: Run Forge tests
+              run: |
+                  forge test
+
+            - name: Coverage
+              run: forge coverage --report lcov
+
+            - uses: codecov/codecov-action@v2

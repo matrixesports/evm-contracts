@@ -1,0 +1,25 @@
+# Solidity
+/out/
+/cache/
+/broadcast/
+/report/
+/script/Dev.s.sol
+
+# Environment
+.env
+.vscode/
+TODO
+.DS_Store
+node_modules
+
+# lint
+.prettierignore
+.solhintignoire
+.solhint.json
+.prettierrc
+lcov.info
+
+#slither
+.venv/
+
+MTXToken.sol
