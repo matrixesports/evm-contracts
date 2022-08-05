@@ -12,7 +12,6 @@ remappings = [
     'forge-std/=lib/forge-std/src/',
 ]
 
-
 # extends default options
 [profile.intense]
 fuzz-runs = 10_000
