@@ -12,7 +12,7 @@ endif
 
 install 		:; yarn && yarn run prepare && foundryup && forge install && forge update && forge build && forge test && \
 				python3 -m venv .venv && source .venv/bin/activate && pip3 install slither-analyzer && \
-				pip3 install solc-select && solc-select install 0.8.15 && solc-select use 0.8.15
+				pip3 install solc-select && solc-select install 0.8.15 && solc-select use 0.8.15 
 lint    		:; forge fmt
 
 #run dev script
@@ -23,4 +23,4 @@ execute_mainnet	:; forge script $(file) --rpc-url $(MAINNET_RPC) --private-key $
 #for html reports, `brew install lcov` & go live with reports/ directory.
 coverage 		:; forge coverage --report lcov && genhtml lcov.info -o report --branch-coverage && open report/index.html
 
-slither 		:; slither $(file) --checklist
+slither 		:; source .venv/bin/activate && slither . --checklist

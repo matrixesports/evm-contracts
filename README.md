@@ -40,7 +40,7 @@
 ### Instalation
 
 ```bash
-make all
+make install
 ```
 
 ### Development
@@ -73,8 +73,6 @@ make all
 -   Allows users to `craft` new tokens based on a `recipe`.
 -   The recipe defines a list of input tokens, known as ingredients, and a list of output tokens. Crafting is then the act of burning the input tokens and minting the output tokens.
 -   Crafting uses ONLY items from Battle Pass contracts and must be whitelisted by all BattlePass for minting rights.
--   Deployed only once for the entire ecosystem:
-    -   `matic`:
 
 ## Important
 
