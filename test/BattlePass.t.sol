@@ -8,19 +8,19 @@ import "forge-std/Test.sol";
 contract BattlePassTest is Test {
     Crafting crafting = new Crafting();
     BattlePass bp;
-    LevelInfo[] levelInfo;
+
     address mockUser = address(1);
     uint256 seasonId;
+
+    LevelInfo[] levelInfo;
     LootboxOption[] lootbox;
 
-    /// @dev emit when tokens are delegated
     event Delegated(
         address indexed delegator,
         address indexed delegatee,
         uint256 indexed amount
     );
 
-    /// @dev emit when tokens are undelegated
     event Undelegated(
         address indexed delegator,
         address indexed delegatee,
@@ -65,23 +65,23 @@ contract BattlePassTest is Test {
 
     function testRevertGiveXpNonOwner() public {
         unauthorized();
-        bp.giveXp(1, 1, mockUser);
+        bp.giveXp(seasonId, 1, mockUser);
     }
 
     function testGiveXp(uint256 xp) public {
-        bp.giveXp(1, xp, mockUser);
+        bp.giveXp(seasonId, xp, mockUser);
         (uint256 _xp,) = bp.userInfo(mockUser, 1);
         assertEq(_xp, xp);
     }
 
     function testRevertSetXpNonOwner() public {
         unauthorized();
-        bp.setXp(1, 1, 1);
+        bp.setXp(seasonId, 1, 1);
     }
 
     function testSetXp(uint256 xp) public {
-        bp.setXp(1, 1, xp);
-        (uint256 xpToCompleteLevel,,,,) = bp.seasonInfo(1, 1);
+        bp.setXp(seasonId, 1, xp);
+        (uint256 xpToCompleteLevel,,,,) = bp.seasonInfo(seasonId, 1);
         assertEq(xpToCompleteLevel, xp);
     }
 
@@ -116,19 +116,19 @@ contract BattlePassTest is Test {
 
     function testRevertAddRewardNonOwner() public {
         unauthorized();
-        bp.addReward(1, 1, false, 1, 1);
+        bp.addReward(seasonId, 1, false, 1, 1);
     }
 
     function testAddReward() public {
-        bp.addReward(1, 1, false, 1, 1);
-        bp.addReward(1, 1, true, 1, 1);
+        bp.addReward(seasonId, 1, false, 1, 1);
+        bp.addReward(seasonId, 1, true, 1, 1);
         (
             ,
             uint256 freeRewardId,
             uint256 freeRewardQty,
             uint256 premiumRewardId,
             uint256 premiumRewardQty
-        ) = bp.seasonInfo(1, 1);
+        ) = bp.seasonInfo(seasonId, 1);
         assertEq(freeRewardId, 1);
         assertEq(freeRewardQty, 1);
         assertEq(premiumRewardId, 1);
@@ -138,7 +138,7 @@ contract BattlePassTest is Test {
     function testRevertClaimRewardNotAtLevel() public {
         vm.startPrank(mockUser);
         vm.expectRevert(NotAtLevelNeededToClaimReward.selector);
-        bp.claimReward(1, 1, false);
+        bp.claimReward(seasonId, 1, false);
     }
 
     function testRevertClaimRewardAlreadyClaimed() public {
@@ -302,18 +302,18 @@ contract BattlePassTest is Test {
 
     // reward contract tests:
 
-    function testRevertMintNotAllowed(address hckr) public {
-        vm.assume(hckr != address(this));
-        vm.assume(hckr != address(crafting));
-        vm.startPrank(hckr);
+    function testRevertMintNotAllowed(address dprk) public {
+        vm.assume(dprk != address(this));
+        vm.assume(dprk != address(crafting));
+        vm.startPrank(dprk);
         vm.expectRevert(NoAccess.selector);
         bp.mint(mockUser, 1, 1);
     }
 
-    function testRevertBurnNotAllowed(address hckr) public {
-        vm.assume(hckr != address(this));
-        vm.assume(hckr != address(crafting));
-        vm.startPrank(hckr);
+    function testRevertBurnNotAllowed(address dprk) public {
+        vm.assume(dprk != address(this));
+        vm.assume(dprk != address(crafting));
+        vm.startPrank(dprk);
         vm.expectRevert(NoAccess.selector);
         bp.burn(mockUser, 1, 1);
     }
