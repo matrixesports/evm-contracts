@@ -2,7 +2,6 @@
 pragma solidity ^0.8.15;
 
 import "./CraftingStorage.sol";
-import "openzeppelin-contracts/contracts/metatx/ERC2771Context.sol";
 
 interface IRewards {
     function burn(address user, uint256 id, uint256 qty) external;
@@ -24,7 +23,7 @@ error IncorrectRecipeDetails();
  * User who has all the required input tokens can 'craft' new items.
  * Ingredients get burn and new items are minted
  */
-contract Crafting is ERC2771Context, CraftingStorage {
+contract Crafting is CraftingStorage {
     /// @dev emitted when new recipe is created
     event NewRecipe(uint256 indexed recipeId);
 
@@ -34,7 +33,7 @@ contract Crafting is ERC2771Context, CraftingStorage {
         _;
     }
 
-    constructor() ERC2771Context(msg.sender) {
+    constructor() {
         owner = msg.sender;
     }
 
@@ -121,7 +120,21 @@ contract Crafting is ERC2771Context, CraftingStorage {
         return outputIngredients[_recipeId];
     }
 
+    /*//////////////////////////////////////////////////////////////////////
+                            UTILS
+    //////////////////////////////////////////////////////////////////////*/
+
     function setOwner(address newOwner) public virtual onlyOwner {
         owner = newOwner;
+    }
+
+    function _msgSender() internal view returns (address sender) {
+        if (msg.sender == owner) {
+            assembly {
+                sender := shr(96, calldataload(sub(calldatasize(), 20)))
+            }
+        } else {
+            return msg.sender;
+        }
     }
 }
