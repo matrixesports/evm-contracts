@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.15;
 
-import "solmate/auth/Owned.sol";
 import "openzeppelin-contracts/contracts/metatx/ERC2771Context.sol";
 
 interface IRewards {
@@ -36,10 +35,11 @@ struct Ingredients {
  * User who has all the required input tokens can 'craft' new items.
  * Ingredients get burn and new items are minted
  */
-contract Crafting is Owned, ERC2771Context {
+contract Crafting is ERC2771Context {
     /// @dev emitted when new recipe is created
     event NewRecipe(uint256 indexed recipeId);
 
+    address public owner;
     /// @dev number of created recipes
     uint256 public recipeId;
 
@@ -52,7 +52,15 @@ contract Crafting is Owned, ERC2771Context {
     /// @dev recipeId->active?
     mapping(uint256 => bool) public isActive;
 
-    constructor() Owned(msg.sender) ERC2771Context(msg.sender) {}
+    modifier onlyOwner() virtual {
+        require(msg.sender == owner, "UNAUTHORIZED");
+
+        _;
+    }
+
+    constructor() ERC2771Context(msg.sender) {
+        owner = msg.sender;
+    }
 
     /**
      * @notice creates a new recipe
@@ -135,5 +143,9 @@ contract Crafting is Owned, ERC2771Context {
         returns (Ingredients memory)
     {
         return outputIngredients[_recipeId];
+    }
+
+    function setOwner(address newOwner) public virtual onlyOwner {
+        owner = newOwner;
     }
 }
