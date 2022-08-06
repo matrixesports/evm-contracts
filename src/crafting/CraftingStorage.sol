@@ -21,7 +21,7 @@ struct Ingredients {
  * IF YOU WANT TO INTRODUCE NEW SLOTS MAKE SURE YOU DO IT
  * AFTER THE ALREADY DEFINED ONES.
  */
-contract CraftingStorage {
+abstract contract CraftingStorage {
     address public owner;
     /// @dev number of created recipes
     uint256 public recipeId;
