@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.15;
 
-import "../src/Crafting.sol";
+import "../src/crafting/Crafting.sol";
 import "../src/BattlePass.sol";
 import "forge-std/Test.sol";
 

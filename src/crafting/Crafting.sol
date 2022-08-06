@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.15;
 
+import "./CraftingStorage.sol";
 import "openzeppelin-contracts/contracts/metatx/ERC2771Context.sol";
 
 interface IRewards {
@@ -16,18 +17,6 @@ error RecipeNotActive();
 error IncorrectRecipeDetails();
 
 /**
- * @dev ingredients for a recipe
- * battlePasses: list of battle pass addresses (all ingredients come from Battle Pass contracts)
- * ids: list of ids
- * qtys: list of qtys
- */
-struct Ingredients {
-    address[] battlePasses;
-    uint256[] ids;
-    uint256[] qtys;
-}
-
-/**
  * @title Craft recipes, make new yummy items
  * @author rayquaza7
  * @notice
@@ -35,22 +24,9 @@ struct Ingredients {
  * User who has all the required input tokens can 'craft' new items.
  * Ingredients get burn and new items are minted
  */
-contract Crafting is ERC2771Context {
+contract Crafting is ERC2771Context, CraftingStorage {
     /// @dev emitted when new recipe is created
     event NewRecipe(uint256 indexed recipeId);
-
-    address public owner;
-    /// @dev number of created recipes
-    uint256 public recipeId;
-
-    /// @dev recipe id->input ingredients
-    mapping(uint256 => Ingredients) internal inputIngredients;
-
-    /// @dev recipeId->output ingredients
-    mapping(uint256 => Ingredients) internal outputIngredients;
-
-    /// @dev recipeId->active?
-    mapping(uint256 => bool) public isActive;
 
     modifier onlyOwner() virtual {
         require(msg.sender == owner, "UNAUTHORIZED");
