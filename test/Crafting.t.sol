@@ -107,26 +107,18 @@ contract CraftingTest is Test {
     function testCraft() public {
         uint256 recipeId = crafting.addRecipe(input, output);
         for (uint256 x; x < input.battlePasses.length; x++) {
-            BattlePass(input.battlePasses[x]).mint(
-                mockUser, input.ids[x], input.qtys[x]
-            );
+            BattlePass(input.battlePasses[x]).mint(mockUser, input.ids[x], input.qtys[x]);
         }
 
         vm.prank(mockUser);
         crafting.craft(recipeId);
 
         for (uint256 x; x < input.battlePasses.length; x++) {
-            assertEq(
-                BattlePass(input.battlePasses[x]).balanceOf(mockUser, input.ids[x]),
-                0
-            );
+            assertEq(BattlePass(input.battlePasses[x]).balanceOf(mockUser, input.ids[x]), 0);
         }
 
         for (uint256 x; x < output.battlePasses.length; x++) {
-            assertEq(
-                BattlePass(output.battlePasses[x]).balanceOf(mockUser, output.ids[x]),
-                output.qtys[x]
-            );
+            assertEq(BattlePass(output.battlePasses[x]).balanceOf(mockUser, output.ids[x]), output.qtys[x]);
         }
     }
 
@@ -134,27 +126,16 @@ contract CraftingTest is Test {
     function testCraftWithMetaTx() public {
         uint256 recipeId = crafting.addRecipe(input, output);
         for (uint256 x; x < input.battlePasses.length; x++) {
-            BattlePass(input.battlePasses[x]).mint(
-                mockUser, input.ids[x], input.qtys[x]
-            );
+            BattlePass(input.battlePasses[x]).mint(mockUser, input.ids[x], input.qtys[x]);
         }
-        (bool success,) = address(crafting).call(
-            abi.encodePacked(
-                abi.encodeWithSelector(crafting.craft.selector, recipeId), mockUser
-            )
-        );
+        (bool success,) =
+            address(crafting).call(abi.encodePacked(abi.encodeWithSelector(crafting.craft.selector, recipeId), mockUser));
         assertTrue(success);
         for (uint256 x; x < input.battlePasses.length; x++) {
-            assertEq(
-                BattlePass(input.battlePasses[x]).balanceOf(mockUser, input.ids[x]),
-                0
-            );
+            assertEq(BattlePass(input.battlePasses[x]).balanceOf(mockUser, input.ids[x]), 0);
         }
         for (uint256 x; x < output.battlePasses.length; x++) {
-            assertEq(
-                BattlePass(output.battlePasses[x]).balanceOf(mockUser, output.ids[x]),
-                output.qtys[x]
-            );
+            assertEq(BattlePass(output.battlePasses[x]).balanceOf(mockUser, output.ids[x]), output.qtys[x]);
         }
     }
 }

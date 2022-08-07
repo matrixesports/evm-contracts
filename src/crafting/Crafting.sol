@@ -22,6 +22,9 @@ error IncorrectRecipeDetails();
  * Recipe is just a list of input and output tokens
  * User who has all the required input tokens can 'craft' new items.
  * Ingredients get burn and new items are minted
+ * @dev implements a modified/minimal version of
+ * https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v4.7.2/contracts/proxy/utils/UUPSUpgradeable.sol
+ * Removed inheritance in order to simplify storage layout
  */
 contract Crafting is CraftingStorage {
     /// @dev emitted when new recipe is created
@@ -46,16 +49,10 @@ contract Crafting is CraftingStorage {
      * @param output ingredients
      * @return recipeId
      */
-    function addRecipe(Ingredients calldata input, Ingredients calldata output)
-        external
-        onlyOwner
-        returns (uint256)
-    {
+    function addRecipe(Ingredients calldata input, Ingredients calldata output) external onlyOwner returns (uint256) {
         if (
-            input.battlePasses.length != input.ids.length
-                || input.ids.length != input.qtys.length
-                || output.ids.length != output.qtys.length
-                || output.battlePasses.length != output.qtys.length
+            input.battlePasses.length != input.ids.length || input.ids.length != input.qtys.length
+                || output.ids.length != output.qtys.length || output.battlePasses.length != output.qtys.length
         ) {
             revert IncorrectRecipeDetails();
         }
@@ -91,32 +88,20 @@ contract Crafting is CraftingStorage {
         Ingredients memory input = inputIngredients[_recipeId];
         Ingredients memory output = outputIngredients[_recipeId];
         for (uint256 x; x < input.battlePasses.length; x++) {
-            IRewards(input.battlePasses[x]).burn(
-                user, input.ids[x], input.qtys[x]
-            );
+            IRewards(input.battlePasses[x]).burn(user, input.ids[x], input.qtys[x]);
         }
         for (uint256 x; x < output.battlePasses.length; x++) {
-            IRewards(output.battlePasses[x]).mint(
-                user, output.ids[x], output.qtys[x]
-            );
+            IRewards(output.battlePasses[x]).mint(user, output.ids[x], output.qtys[x]);
         }
     }
 
     /// @notice gets input ingredients for a recipe id
-    function getInputIngredients(uint256 _recipeId)
-        external
-        view
-        returns (Ingredients memory)
-    {
+    function getInputIngredients(uint256 _recipeId) external view returns (Ingredients memory) {
         return inputIngredients[_recipeId];
     }
 
     /// @notice gets output ingredients for a recipe id
-    function getOutputIngredients(uint256 _recipeId)
-        external
-        view
-        returns (Ingredients memory)
-    {
+    function getOutputIngredients(uint256 _recipeId) external view returns (Ingredients memory) {
         return outputIngredients[_recipeId];
     }
 

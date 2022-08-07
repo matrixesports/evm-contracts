@@ -18,5 +18,5 @@ fuzz-runs = 10_000
 cache = false
 force = true
 
-[profile.fmt]
-line-length = 128
+[fmt]
+line_length = 128

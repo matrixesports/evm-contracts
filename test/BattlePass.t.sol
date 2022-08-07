@@ -15,17 +15,9 @@ contract BattlePassTest is Test {
     LevelInfo[] levelInfo;
     LootboxOption[] lootbox;
 
-    event Delegated(
-        address indexed delegator,
-        address indexed delegatee,
-        uint256 indexed amount
-    );
+    event Delegated(address indexed delegator, address indexed delegatee, uint256 indexed amount);
 
-    event Undelegated(
-        address indexed delegator,
-        address indexed delegatee,
-        uint256 indexed amount
-    );
+    event Undelegated(address indexed delegator, address indexed delegatee, uint256 indexed amount);
 
     function setUp() public {
         bp = new BattlePass("", address(crafting));
@@ -122,13 +114,8 @@ contract BattlePassTest is Test {
     function testAddReward() public {
         bp.addReward(seasonId, 1, false, 1, 1);
         bp.addReward(seasonId, 1, true, 1, 1);
-        (
-            ,
-            uint256 freeRewardId,
-            uint256 freeRewardQty,
-            uint256 premiumRewardId,
-            uint256 premiumRewardQty
-        ) = bp.seasonInfo(seasonId, 1);
+        (, uint256 freeRewardId, uint256 freeRewardQty, uint256 premiumRewardId, uint256 premiumRewardQty) =
+            bp.seasonInfo(seasonId, 1);
         assertEq(freeRewardId, 1);
         assertEq(freeRewardQty, 1);
         assertEq(premiumRewardId, 1);
@@ -162,10 +149,7 @@ contract BattlePassTest is Test {
 
         for (uint256 x; x < levelInfo.length; x++) {
             bp.claimReward(seasonId, x, false);
-            assertEq(
-                bp.balanceOf(mockUser, levelInfo[x].freeRewardId),
-                levelInfo[x].freeRewardQty
-            );
+            assertEq(bp.balanceOf(mockUser, levelInfo[x].freeRewardId), levelInfo[x].freeRewardQty);
             assertTrue(bp.isRewardClaimed(mockUser, seasonId, x, false));
         }
 
@@ -188,10 +172,7 @@ contract BattlePassTest is Test {
 
         for (uint256 x = 2; x < levelInfo.length; x++) {
             bp.claimReward(seasonId, x, true);
-            assertEq(
-                bp.balanceOf(mockUser, levelInfo[x].premiumRewardId),
-                levelInfo[x].premiumRewardQty
-            );
+            assertEq(bp.balanceOf(mockUser, levelInfo[x].premiumRewardId), levelInfo[x].premiumRewardQty);
             assertTrue(bp.isRewardClaimed(mockUser, seasonId, x, true));
         }
     }
@@ -200,17 +181,10 @@ contract BattlePassTest is Test {
         bp.giveXp(seasonId, 100, mockUser);
 
         for (uint256 x; x < levelInfo.length; x++) {
-            (bool success,) = address(bp).call(
-                abi.encodePacked(
-                    abi.encodeWithSelector(bp.claimReward.selector, seasonId, x, false),
-                    mockUser
-                )
-            );
+            (bool success,) =
+                address(bp).call(abi.encodePacked(abi.encodeWithSelector(bp.claimReward.selector, seasonId, x, false), mockUser));
             assertTrue(success);
-            assertEq(
-                bp.balanceOf(mockUser, levelInfo[x].freeRewardId),
-                levelInfo[x].freeRewardQty
-            );
+            assertEq(bp.balanceOf(mockUser, levelInfo[x].freeRewardId), levelInfo[x].freeRewardQty);
             assertTrue(bp.isRewardClaimed(mockUser, seasonId, x, false));
         }
 
@@ -218,12 +192,8 @@ contract BattlePassTest is Test {
         //premium reward at level 0 is 0, claiming it shouldnt burn the premium pass
         assertTrue(bp.isUserPremium(mockUser, seasonId));
         uint256 oldPremiumPassBalance = bp.balanceOf(mockUser, seasonId);
-        (bool success,) = address(bp).call(
-            abi.encodePacked(
-                abi.encodeWithSelector(bp.claimReward.selector, seasonId, 0, true),
-                mockUser
-            )
-        );
+        (bool success,) =
+            address(bp).call(abi.encodePacked(abi.encodeWithSelector(bp.claimReward.selector, seasonId, 0, true), mockUser));
         assertTrue(success);
         uint256 newPremiumPassBalance = bp.balanceOf(mockUser, seasonId);
         assertEq(oldPremiumPassBalance, newPremiumPassBalance);
@@ -232,29 +202,18 @@ contract BattlePassTest is Test {
         assertFalse(claimedPremiumPass);
 
         //claiming first premium reward should burn it
-        (success,) = address(bp).call(
-            abi.encodePacked(
-                abi.encodeWithSelector(bp.claimReward.selector, seasonId, 1, true),
-                mockUser
-            )
-        );
+        (success,) =
+            address(bp).call(abi.encodePacked(abi.encodeWithSelector(bp.claimReward.selector, seasonId, 1, true), mockUser));
         assertTrue(success);
         (, claimedPremiumPass) = bp.userInfo(mockUser, seasonId);
         assertTrue(claimedPremiumPass);
         assertEq(oldPremiumPassBalance - 1, bp.balanceOf(mockUser, seasonId));
 
         for (uint256 x = 2; x < levelInfo.length; x++) {
-            (success,) = address(bp).call(
-                abi.encodePacked(
-                    abi.encodeWithSelector(bp.claimReward.selector, seasonId, x, true),
-                    mockUser
-                )
-            );
+            (success,) =
+                address(bp).call(abi.encodePacked(abi.encodeWithSelector(bp.claimReward.selector, seasonId, x, true), mockUser));
             assertTrue(success);
-            assertEq(
-                bp.balanceOf(mockUser, levelInfo[x].premiumRewardId),
-                levelInfo[x].premiumRewardQty
-            );
+            assertEq(bp.balanceOf(mockUser, levelInfo[x].premiumRewardId), levelInfo[x].premiumRewardQty);
             assertTrue(bp.isRewardClaimed(mockUser, seasonId, x, true));
         }
     }
@@ -392,8 +351,7 @@ contract BattlePassTest is Test {
         assertEq(oldLootboxId + 1, lootboxId);
 
         for (uint256 x; x < lootbox.length; x++) {
-            LootboxOption memory storedOption =
-                bp.getLootboxOptionByIdx(lootboxId, x);
+            LootboxOption memory storedOption = bp.getLootboxOptionByIdx(lootboxId, x);
             assertEq(storedOption.rarityRange[0], lootbox[x].rarityRange[0]);
             assertEq(storedOption.rarityRange[1], lootbox[x].rarityRange[1]);
             for (uint256 y; y < lootbox[x].ids.length; y++) {
@@ -414,10 +372,7 @@ contract BattlePassTest is Test {
         vm.startPrank(mockUser);
         uint256 idxOpened = bp.openLootbox(lootboxId);
         for (uint256 y; y < lootbox[idxOpened].ids.length; y++) {
-            assertEq(
-                bp.balanceOf(mockUser, lootbox[idxOpened].ids[y]),
-                lootbox[idxOpened].qtys[y]
-            );
+            assertEq(bp.balanceOf(mockUser, lootbox[idxOpened].ids[y]), lootbox[idxOpened].qtys[y]);
         }
         assertEq(bp.balanceOf(mockUser, lootboxId), 0);
     }
@@ -425,18 +380,12 @@ contract BattlePassTest is Test {
     function testOpenLootboxMetaTx() public {
         uint256 lootboxId = createLootbox();
         bp.mint(mockUser, lootboxId, 1);
-        (bool success, bytes memory data) = address(bp).call(
-            abi.encodePacked(
-                abi.encodeWithSelector(bp.openLootbox.selector, lootboxId), mockUser
-            )
-        );
+        (bool success, bytes memory data) =
+            address(bp).call(abi.encodePacked(abi.encodeWithSelector(bp.openLootbox.selector, lootboxId), mockUser));
         assertTrue(success);
         uint256 idxOpened = uint256(bytes32(data));
         for (uint256 y; y < lootbox[idxOpened].ids.length; y++) {
-            assertEq(
-                bp.balanceOf(mockUser, lootbox[idxOpened].ids[y]),
-                lootbox[idxOpened].qtys[y]
-            );
+            assertEq(bp.balanceOf(mockUser, lootbox[idxOpened].ids[y]), lootbox[idxOpened].qtys[y]);
         }
         assertEq(bp.balanceOf(mockUser, lootboxId), 0);
     }
@@ -446,9 +395,7 @@ contract BattlePassTest is Test {
         assertEq(bp.getLootboxOptionsLength(lootboxId), lootbox.length);
     }
 
-    function testRevertDelegate(uint256 amount, uint256 delegateAmount)
-        public
-    {
+    function testRevertDelegate(uint256 amount, uint256 delegateAmount) public {
         vm.assume(amount < delegateAmount);
         bp.mint(mockUser, bp.CREATOR_TOKEN_ID(), amount);
         vm.startPrank(mockUser);
@@ -470,9 +417,7 @@ contract BattlePassTest is Test {
         assertEq(bp.delegatedTotal(delegatee), delegateAmount);
     }
 
-    function testDelegateMetaTx(uint256 amount, uint256 delegateAmount)
-        public
-    {
+    function testDelegateMetaTx(uint256 amount, uint256 delegateAmount) public {
         uint256 id = bp.CREATOR_TOKEN_ID();
         address delegatee = address(100);
         vm.assume(amount >= delegateAmount);
@@ -480,12 +425,8 @@ contract BattlePassTest is Test {
 
         vm.expectEmit(true, true, true, true);
         emit Delegated(mockUser, delegatee, delegateAmount);
-        (bool success,) = address(bp).call(
-            abi.encodePacked(
-                abi.encodeWithSelector(bp.delegate.selector, delegatee, delegateAmount),
-                mockUser
-            )
-        );
+        (bool success,) =
+            address(bp).call(abi.encodePacked(abi.encodeWithSelector(bp.delegate.selector, delegatee, delegateAmount), mockUser));
         assertTrue(success);
         assertEq(amount - delegateAmount, bp.balanceOf(mockUser, id));
         assertEq(bp.delegatedBy(mockUser, delegatee), delegateAmount);
@@ -501,13 +442,7 @@ contract BattlePassTest is Test {
         bp.undelegate(address(100), undelegateAmount + 1);
     }
 
-    function testUndelegate(
-        uint256 amount,
-        uint256 delegate,
-        uint256 undelegate
-    )
-        public
-    {
+    function testUndelegate(uint256 amount, uint256 delegate, uint256 undelegate) public {
         vm.assume(amount > 0);
         vm.assume(amount > delegate);
         vm.assume(delegate > undelegate);
@@ -527,13 +462,7 @@ contract BattlePassTest is Test {
         assertEq(bp.delegatedTotal(delegatee), delegate - undelegate);
     }
 
-    function testUndelegateMetaTx(
-        uint256 amount,
-        uint256 delegate,
-        uint256 undelegate
-    )
-        public
-    {
+    function testUndelegateMetaTx(uint256 amount, uint256 delegate, uint256 undelegate) public {
         vm.assume(amount > 0);
         vm.assume(amount > delegate);
         vm.assume(delegate > undelegate);
@@ -542,21 +471,13 @@ contract BattlePassTest is Test {
         address delegatee = address(100);
         bp.mint(mockUser, id, amount);
 
-        (bool success,) = address(bp).call(
-            abi.encodePacked(
-                abi.encodeWithSelector(bp.delegate.selector, delegatee, delegate),
-                mockUser
-            )
-        );
+        (bool success,) =
+            address(bp).call(abi.encodePacked(abi.encodeWithSelector(bp.delegate.selector, delegatee, delegate), mockUser));
         assertTrue(success);
         vm.expectEmit(true, true, true, true);
         emit Undelegated(mockUser, delegatee, undelegate);
-        (success,) = address(bp).call(
-            abi.encodePacked(
-                abi.encodeWithSelector(bp.undelegate.selector, delegatee, undelegate),
-                mockUser
-            )
-        );
+        (success,) =
+            address(bp).call(abi.encodePacked(abi.encodeWithSelector(bp.undelegate.selector, delegatee, undelegate), mockUser));
         assertTrue(success);
 
         assertEq(amount - delegate + undelegate, bp.balanceOf(mockUser, id));

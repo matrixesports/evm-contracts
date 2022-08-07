@@ -71,16 +71,9 @@ abstract contract Rewards is ERC1155, Owned, ERC2771Context {
     uint256 public constant SPECIAL_STARTING_ID = 20000;
     uint256 public constant INVALID_STARTING_ID = 30000;
 
-    event LootboxOpened(
-        uint256 indexed lootboxId,
-        uint256 indexed idxOpened,
-        address indexed user
-    );
+    event LootboxOpened(uint256 indexed lootboxId, uint256 indexed idxOpened, address indexed user);
 
-    constructor(string memory _uri, address _crafting)
-        Owned(msg.sender)
-        ERC2771Context(msg.sender)
-    {
+    constructor(string memory _uri, address _crafting) Owned(msg.sender) ERC2771Context(msg.sender) {
         tokenURI = _uri;
         crafting = _crafting;
     }
@@ -135,19 +128,14 @@ abstract contract Rewards is ERC1155, Owned, ERC2771Context {
      * @param options all the LootboxOptions avaliable in a lootbox
      * @return new lootboxId
      */
-    function newLootbox(LootboxOption[] memory options)
-        external
-        onlyOwner
-        returns (uint256)
-    {
+    function newLootbox(LootboxOption[] memory options) external onlyOwner returns (uint256) {
         lootboxId++;
         uint256 cumulativeProbability;
         for (uint256 x = 0; x < options.length; x++) {
             if (options[x].ids.length != options[x].qtys.length) {
                 revert IncorrectLootboxOptions();
             }
-            cumulativeProbability +=
-                options[x].rarityRange[1] - options[x].rarityRange[0];
+            cumulativeProbability += options[x].rarityRange[1] - options[x].rarityRange[0];
             lootboxRewards[lootboxId].push(options[x]);
         }
         if (cumulativeProbability != 100) {
@@ -172,17 +160,10 @@ abstract contract Rewards is ERC1155, Owned, ERC2771Context {
 
     /// @notice calculates a pseudorandom index between 0-99
     function calculateRandom(uint256 id) public view returns (uint256) {
-        uint256 random = uint256(
-            keccak256(
-                abi.encodePacked(block.timestamp, blockhash(block.number), block.difficulty)
-            )
-        ) % 100;
+        uint256 random = uint256(keccak256(abi.encodePacked(block.timestamp, blockhash(block.number), block.difficulty))) % 100;
         LootboxOption[] memory options = lootboxRewards[id];
         for (uint256 x; x < options.length; x++) {
-            if (
-                random >= options[x].rarityRange[0]
-                    && random < options[x].rarityRange[1]
-            ) {
+            if (random >= options[x].rarityRange[0] && random < options[x].rarityRange[1]) {
                 return x;
             }
         }
@@ -190,20 +171,12 @@ abstract contract Rewards is ERC1155, Owned, ERC2771Context {
     }
 
     /// @notice gets a lootboxOption by lootboxId and index
-    function getLootboxOptionByIdx(uint256 id, uint256 idx)
-        external
-        view
-        returns (LootboxOption memory option)
-    {
+    function getLootboxOptionByIdx(uint256 id, uint256 idx) external view returns (LootboxOption memory option) {
         return lootboxRewards[id][idx];
     }
 
     /// @notice gets a lootboxOptions length by lootboxId
-    function getLootboxOptionsLength(uint256 id)
-        external
-        view
-        returns (uint256)
-    {
+    function getLootboxOptionsLength(uint256 id) external view returns (uint256) {
         return lootboxRewards[id].length;
     }
 
@@ -219,18 +192,10 @@ abstract contract Rewards is ERC1155, Owned, ERC2771Context {
     mapping(address => uint256) public delegatedTotal;
 
     /// @dev emit when tokens are delegated
-    event Delegated(
-        address indexed delegator,
-        address indexed delegatee,
-        uint256 indexed amount
-    );
+    event Delegated(address indexed delegator, address indexed delegatee, uint256 indexed amount);
 
     /// @dev emit when tokens are undelegated
-    event Undelegated(
-        address indexed delegator,
-        address indexed delegatee,
-        uint256 indexed amount
-    );
+    event Undelegated(address indexed delegator, address indexed delegatee, uint256 indexed amount);
 
     /// @notice delegates msg.sender's tokens to a delegatee
     /// @dev revert if balance is insufficient
