@@ -33,7 +33,7 @@ contract Crafting is UUPSUpgradeable {
     constructor() {}
 
     function initialize(address _owner) public {
-        require(address(this).code.length == 0 && owner == address(0), "proxy already deployed");
+        require(address(this).code.length == 0, "hehe no.");
         owner = _owner;
     }
 
