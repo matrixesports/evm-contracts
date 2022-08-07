@@ -20,12 +20,12 @@ abstract contract ERC1967Upgrade {
      * Emits an {Upgraded} event.
      */
     function _upgradeTo(address newImplementation) internal virtual {
+        require(newImplementation.code.length > 0, "ERC1967: new implementation is not a contract");
         try IERC1822Proxiable(newImplementation).proxiableUUID() returns (bytes32 slot) {
             require(slot == _IMPLEMENTATION_SLOT, "ERC1967Upgrade: unsupported proxiableUUID");
         } catch {
             revert("ERC1967Upgrade: new implementation is not UUPS");
         }
-        require(newImplementation.code.length > 0, "ERC1967: new implementation is not a contract");
         assembly {
             sstore(_IMPLEMENTATION_SLOT, newImplementation)
         }

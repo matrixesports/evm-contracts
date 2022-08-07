@@ -2,10 +2,9 @@
 pragma solidity ^0.8.15;
 
 import "./ERC1967Upgrade.sol";
-import "./CraftingStorage.sol";
 import "solmate/utils/Bytes32AddressLib.sol";
 
-abstract contract UUPSUpgradeable is ERC1967Upgrade, CraftingStorage {
+abstract contract UUPSUpgradeable is ERC1967Upgrade {
     using Bytes32AddressLib for bytes32;
 
     address private immutable __self = address(this);
@@ -26,12 +25,6 @@ abstract contract UUPSUpgradeable is ERC1967Upgrade, CraftingStorage {
         _;
     }
 
-    modifier onlyOwner() virtual {
-        require(msg.sender == owner, "UNAUTHORIZED");
-
-        _;
-    }
-
     /**
      * @dev Implementation of the ERC1822 {proxiableUUID} function. This returns the storage slot used by the
      * implementation. It is used to validate that the this implementation remains valid after an upgrade.
@@ -45,12 +38,5 @@ abstract contract UUPSUpgradeable is ERC1967Upgrade, CraftingStorage {
     function proxiableUUID() external view returns (bytes32) {
         require(address(this) == __self, "UUPSUpgradeable: must not be called through delegatecall");
         return _IMPLEMENTATION_SLOT;
-    }
-
-    /**
-     * @dev Upgrade the implementation of the proxy to `newImplementation`.
-     */
-    function upgradeTo(address newImplementation) external onlyProxy onlyOwner {
-        super._upgradeTo(newImplementation);
     }
 }

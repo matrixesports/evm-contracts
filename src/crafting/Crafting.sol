@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.15;
 
+import "./CraftingStorage.sol";
 import "./UUPSUpgradeable.sol";
 
 interface IRewards {
@@ -26,9 +27,15 @@ error IncorrectRecipeDetails();
  * https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v4.7.2/contracts/proxy/utils/UUPSUpgradeable.sol
  * Removed inheritance in order to simplify storage layout
  */
-contract Crafting is UUPSUpgradeable {
+contract Crafting is UUPSUpgradeable, CraftingStorage {
     /// @dev emitted when new recipe is created
     event NewRecipe(uint256 indexed recipeId);
+
+    modifier onlyOwner() virtual {
+        require(msg.sender == owner, "UNAUTHORIZED");
+
+        _;
+    }
 
     constructor() {}
 
@@ -118,5 +125,9 @@ contract Crafting is UUPSUpgradeable {
         } else {
             return msg.sender;
         }
+    }
+
+    function upgradeTo(address newImplementation) external onlyOwner onlyProxy {
+        super._upgradeTo(newImplementation);
     }
 }
