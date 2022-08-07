@@ -15,7 +15,7 @@ abstract contract ERC1967Upgrade {
     event Upgraded(address indexed implementation);
 
     /**
-     * @dev Perform implementation upgrade with security checks for UUPS proxies, and additional setup call.
+     * @dev Perform implementation upgrade with security checks for UUPS proxies
      *
      * Emits an {Upgraded} event.
      */

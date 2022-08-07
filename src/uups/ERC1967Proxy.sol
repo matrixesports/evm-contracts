@@ -14,9 +14,9 @@ contract ERC1967Proxy is ERC1967Upgrade {
     /**
      * @dev Initializes the upgradeable proxy with an initial implementation specified by `_logic`.
      */
-    constructor(address _logic) payable {
+    constructor(address _logic, bytes memory data) {
         _upgradeTo(_logic);
-        (bool success,) = _logic.delegatecall(abi.encodeWithSignature("initialize(address)", msg.sender));
+        (bool success,) = _logic.delegatecall(data);
         require(success, "wtf");
     }
 

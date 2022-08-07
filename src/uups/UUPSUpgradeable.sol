@@ -33,7 +33,6 @@ abstract contract UUPSUpgradeable is ERC1967Upgrade {
      * bricking a proxy that upgrades to it, by delegating to itself until out of gas. Thus it is critical that this
      * function revert if invoked through a proxy. This is guaranteed by the `notDelegated` modifier.
      *
-     * proxy->Crafting
      */
     function proxiableUUID() external view returns (bytes32) {
         require(address(this) == __self, "UUPSUpgradeable: must not be called through delegatecall");

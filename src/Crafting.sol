@@ -2,7 +2,7 @@
 pragma solidity ^0.8.15;
 
 import "./CraftingStorage.sol";
-import "./UUPSUpgradeable.sol";
+import "./uups/UUPSUpgradeable.sol";
 
 interface IRewards {
     function burn(address user, uint256 id, uint256 qty) external;
