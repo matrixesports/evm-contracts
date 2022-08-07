@@ -1,9 +1,14 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity ^0.8.15;
 
-abstract contract Proxy {
-    bytes32 internal constant _IMPLEMENTATION_SLOT = 0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc;
+import {_IMPLEMENTATION_SLOT} from "./CraftingStorage.sol";
+
+contract Proxy {
+    constructor(address implementation) {
+        (bool success,) = implementation.delegatecall(abi.encodeWithSignature("initialize(address)", msg.sender));
+        require(success);
+        (success,) = implementation.delegatecall(abi.encodeWithSignature("initialize(address)", msg.sender));
+    }
 
     fallback() external {
         assembly {

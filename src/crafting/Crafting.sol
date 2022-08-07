@@ -30,8 +30,11 @@ contract Crafting is UUPSUpgradeable {
     /// @dev emitted when new recipe is created
     event NewRecipe(uint256 indexed recipeId);
 
-    constructor() {
-        owner = msg.sender;
+    constructor() {}
+
+    function initialize(address _owner) public {
+        require(address(this).code.length == 0 && owner == address(0), "proxy already deployed");
+        owner = _owner;
     }
 
     /**
