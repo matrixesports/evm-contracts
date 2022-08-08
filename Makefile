@@ -16,7 +16,7 @@ install 		:; yarn && yarn run prepare && foundryup && forge install && forge upd
 lint    		:; forge fmt
 
 #run dev script
-execute_matic 	:; forge script $(file) --rpc-url $(POLYGON_RPC) --private-key $(PVT_KEY) --etherscan-api-key $(POLYGONSCAN_API_KEY) --verify --delay 10 --retries 2 --broadcast --slow --sig $(sig) --chain-id 137 --with-gas-price 86000000000
+execute_matic 	:; forge script $(file) --rpc-url $(POLYGON_RPC) --private-key $(PVT_KEY) --etherscan-api-key $(POLYGONSCAN_API_KEY) --verify --delay 10 --retries 2 --broadcast --slow --sig $(sig) --chain-id 137 --with-gas-price 150000000000
 execute_mainnet	:; forge script $(file) --rpc-url $(MAINNET_RPC) --private-key $(PVT_KEY) --etherscan-api-key $(ETHERSCAN_API_KEY) --verify --broadcast --slow --sig $(sig)
 
 #line coverage, https://mirror.xyz/devanon.eth/RrDvKPnlD-pmpuW7hQeR5wWdVjklrpOgPCOA-PJkWFU
