@@ -13,7 +13,7 @@ contract V1 is UUPSUpgradeable {
         owner = msg.sender;
     }
 
-    function upgradeTo(address newImplementation) external {
+    function upgradeTo(address newImplementation) external onlyProxy {
         if (msg.sender == owner) {
             _upgradeTo(newImplementation);
         }
@@ -32,7 +32,7 @@ contract V2 is UUPSUpgradeable {
         x = _x;
     }
 
-    function upgradeTo(address newImplementation) external {
+    function upgradeTo(address newImplementation) external onlyProxy {
         if (msg.sender == owner) {
             _upgradeTo(newImplementation);
         }
@@ -69,7 +69,6 @@ contract ERC1967ProxyTest is Test {
         (bool success,) = address(proxy).call(abi.encodeWithSelector(v1.upgradeTo.selector, address(v2)));
         assertTrue(success);
         bytes32 impl = vm.load(address(proxy), _IMPLEMENTATION_SLOT);
-        console.log(impl.fromLast20Bytes());
         assertEq(impl.fromLast20Bytes(), address(v2));
 
         uint256 x_val = 10;
@@ -78,5 +77,16 @@ contract ERC1967ProxyTest is Test {
         uint256 slot = 1;
         bytes32 x = vm.load(address(proxy), bytes32(slot));
         assertEq(x, bytes32(x_val));
+    }
+
+    function testRevertUpgradeNonProxy() public {
+        V2 v2 = new V2();
+        vm.expectRevert(abi.encodePacked("Function must be called through delegatecall"));
+        v1.upgradeTo(address(v2));
+    }
+
+    function testRevertUpgradeToProxy() public {
+        vm.expectRevert(abi.encodePacked("UUPSUpgradeable: must not be called through delegatecall"));
+        (bool success,) = address(proxy).call(abi.encodeWithSelector(v1.upgradeTo.selector, address(proxy)));
     }
 }
