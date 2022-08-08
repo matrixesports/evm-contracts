@@ -39,9 +39,9 @@ contract Crafting is UUPSUpgradeable, CraftingStorage {
 
     constructor() {}
 
-    function initialize(address _owner) public {
+    function initialize() public {
         require(address(this).code.length == 0, "hehe no.");
-        owner = _owner;
+        owner = msg.sender;
     }
 
     /**

@@ -35,13 +35,9 @@
 
 </div>
 
-### Instalation
+![alt text](assets/architecture.png)
 
-```bash
-make install
-```
-
-### BattlePass
+## BattlePass
 
 -   Each creator gets their own `BattlePass` contract, the crafting contract has mint/burn access on this contract.
 -   Battle Pass rewards users for completing creator-specific quests during established periods known as `seasons`. Experience points or `xp` tracks user progression. Similar to the mechansim used in games.
@@ -54,12 +50,18 @@ make install
     -   `REDEEMABLE`🤝: These require actions from the creators in real life or online, for ex: ship merch, follow back on twitter, etc.
     -   `SPECIAL`👀: Custom assets, such as one-of-one NFTs, in-game assets, etc.
 
-### Crafting 🧑‍🍳.
+## Crafting 🧑‍🍳.
 
 -   One crafting contract is deployed on each network.
 -   Allows users to `craft` new tokens based on a `recipe`
 -   The recipe defines a list of input tokens, known as ingredients, and a list of output tokens. Crafting is then the act of burning the input tokens and minting the output tokens✨.
 -   Crafting uses ONLY items from Battle Pass contracts and must be whitelisted by all BattlePass for minting rights.
+
+### Instalation
+
+```bash
+make install
+```
 
 ## Important
 
@@ -67,6 +69,17 @@ make install
     -   solmate, forge-std works fine with forge update
     -   need to keep an eye on oz, master branch is dev branch, works on release branches, current version installed is v4.6.0. https://github.com/foundry-rs/foundry/issues/401
 -   We use oz's EIP-2771 implementation to enable gasless transactions for our users. We do not verify signatures right now because we use magic wallet on our front end and tx can be signed without users approval as it is, running a forwader that verifies tx would be a bit redundant for now.
+-   We use a UUPS proxy to upgrade the crafting contract
+
+### DEPLOYED ADDRESSES
+
+#### MATIC:
+
+```
+Crafting: `0xE7B98903193560C037c0f07CD610Da427d0d0fE1`
+Crafting Proxy: `0x62eCAdfd5e3eF13ed8b09002838d0B5cc0857Cd3`
+BattlePassFactory: `0x5E81bEC5DEBE7e3330407E76C018eC5cBCcA1a1e`
+```
 
 ## Acknowledgements
 
