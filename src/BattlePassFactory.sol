@@ -37,6 +37,7 @@ contract BattlePassFactory is Owned {
     /// @return bp The newly deployed BattlePass contract
     function deployBattlePass(uint256 creatorId)
         external
+        onlyOwner
         returns (BattlePass bp)
     {
         bp = new BattlePass{salt: bytes32(creatorId)}(creatorId, craftingProxy);

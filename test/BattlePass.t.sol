@@ -343,6 +343,16 @@ contract BattlePassTest is Test {
         assertEq("yes", bp.tokenURI());
     }
 
+    function testRevertSetCrafting() public {
+        unauthorized();
+        bp.setCrafting(address(2));
+    }
+
+    function testSeCrafting() public {
+        bp.setCrafting(address(2));
+        assertEq(address(2), bp.crafting());
+    }
+
     function testRevertNewLootboxNonOwner() public {
         unauthorized();
         bp.newLootbox(lootbox);
