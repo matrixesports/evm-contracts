@@ -4,42 +4,7 @@ pragma solidity ^0.8.15;
 import "forge-std/Test.sol";
 import "../src/Crafting.sol";
 import "../src/BattlePass.sol";
-import "../src/uups/ERC1967Proxy.sol";
-import "solmate/utils/Bytes32AddressLib.sol";
 
-contract CraftingProxyTest is Test {
-    using Bytes32AddressLib for address;
-    using Bytes32AddressLib for bytes32;
-
-    Crafting crafting;
-    ERC1967Proxy proxy;
-
-    event Upgraded(address indexed implementation);
-
-    function setUp() public {
-        crafting = new Crafting();
-        bytes memory data = abi.encodeWithSelector(crafting.initialize.selector, address(this));
-        proxy = new ERC1967Proxy(address(crafting),data);
-    }
-
-    function testConstructor() public {
-        bytes32 impl = vm.load(address(proxy), _IMPLEMENTATION_SLOT);
-        assertEq(impl.fromLast20Bytes(), address(crafting));
-        bytes32 owner = vm.load(address(proxy), 0);
-        assertEq(address(this), owner.fromLast20Bytes());
-    }
-
-    function testRevertInitializeAfterProxyConstruction() public {
-        bytes memory data = abi.encodeWithSelector(crafting.initialize.selector, address(1));
-        (bool success,) = address(proxy).delegatecall(data);
-        console.log(success);
-        bytes32 owner = vm.load(address(proxy), 0);
-        console.logBytes32(owner);
-        console.log(address(this));
-    }
-}
-
-/// @notice test craftings functionality here
 contract CraftingTest is Test {
     address mockUser = address(1);
     uint256 inputLength = 3;
@@ -49,7 +14,7 @@ contract CraftingTest is Test {
 
     Crafting crafting;
 
-    function setUp() public {
+    function setUp() public virtual {
         crafting = new Crafting();
         /// since we are only testing functionality here, we'll prank and set owner
         vm.prank(address(0));
