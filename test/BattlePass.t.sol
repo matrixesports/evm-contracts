@@ -10,6 +10,7 @@ contract BattlePassTest is Test {
     BattlePass bp;
 
     address mockUser = address(1);
+    uint256 creatorId = 1;
     uint256 seasonId;
 
     LevelInfo[] levelInfo;
@@ -28,7 +29,7 @@ contract BattlePassTest is Test {
     );
 
     function setUp() public {
-        bp = new BattlePass("", address(crafting));
+        bp = new BattlePass(creatorId, address(crafting));
         LevelInfo memory _levelInfo = LevelInfo(1, 0, 0, 0, 0);
         levelInfo.push(_levelInfo);
         _levelInfo = LevelInfo(1, 1, 10, 2, 10);
@@ -47,7 +48,6 @@ contract BattlePassTest is Test {
     }
 
     function testConstructor() public {
-        assertEq(bp.tokenURI(), "");
         assertEq(bp.crafting(), address(crafting));
         assertEq(bp.PREMIUM_PASS_STARTING_ID(), 1);
         assertEq(bp.CREATOR_TOKEN_ID(), 1000);
@@ -338,7 +338,7 @@ contract BattlePassTest is Test {
         bp.setURI("yes");
     }
 
-    function testURI() public {
+    function testSetURI() public {
         bp.setURI("yes");
         assertEq("yes", bp.tokenURI());
     }
@@ -565,7 +565,17 @@ contract BattlePassTest is Test {
     }
 
     function testUri() public {
-        assertEq(bp.uri(1), "/1.json");
+        assertEq(
+            bp.uri(1),
+            string.concat(
+                bp.tokenURI(),
+                "/",
+                Strings.toString(creatorId),
+                "/",
+                Strings.toString(1),
+                ".json"
+            )
+        );
     }
 
     function testRevertCheckTypeOutOfBounds(uint256 id) public {

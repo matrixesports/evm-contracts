@@ -9,6 +9,7 @@ contract CraftingTest is Test {
     Crafting crafting;
 
     uint256 inputLength = 3;
+    uint256 creatorId = 1;
     Ingredients input;
     Ingredients output;
     address mockUser = address(1);
@@ -16,12 +17,12 @@ contract CraftingTest is Test {
     function setUp() public {
         crafting = new Crafting();
         for (uint256 x = 0; x < inputLength; x++) {
-            BattlePass bp = new BattlePass("", address(crafting));
+            BattlePass bp = new BattlePass(creatorId, address(crafting));
             input.battlePasses.push(address(bp));
             input.ids.push(x + 1);
             input.qtys.push(x + 1);
         }
-        BattlePass bp = new BattlePass("", address(crafting));
+        BattlePass bp = new BattlePass(creatorId, address(crafting));
         output.battlePasses.push(address(bp));
         output.ids.push(10);
         output.qtys.push(1);
