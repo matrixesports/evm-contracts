@@ -59,9 +59,8 @@ error NoAccess();
  */
 abstract contract Rewards is ERC1155, Owned, ERC2771Context {
     /// @dev crafting contract address
-    address public immutable crafting;
-
-    /// @dev uri
+    address public crafting;
+    uint256 public immutable creatorId;
     string public tokenURI;
 
     uint256 public constant PREMIUM_PASS_STARTING_ID = 1;
@@ -73,8 +72,9 @@ abstract contract Rewards is ERC1155, Owned, ERC2771Context {
 
     event LootboxOpened(uint256 indexed lootboxId, uint256 indexed idxOpened, address indexed user);
 
-    constructor(string memory _uri, address _crafting) Owned(msg.sender) ERC2771Context(msg.sender) {
-        tokenURI = _uri;
+    constructor(uint256 _creatorId, address _crafting) Owned(msg.sender) ERC2771Context(msg.sender) {
+        tokenURI = "https://matrix-metadata-server.zeet-matrix.zeet.app";
+        creatorId = _creatorId;
         crafting = _crafting;
     }
 
@@ -107,6 +107,13 @@ abstract contract Rewards is ERC1155, Owned, ERC2771Context {
     /// @param _uri new string with the format https://<>/creatorId/id.json
     function setURI(string memory _uri) external onlyOwner {
         tokenURI = _uri;
+    }
+
+    /// @notice sets the crafting proxy address
+    /// @dev only owner can set it
+    /// @param _crafting new address
+    function setCrafting(address _crafting) external onlyOwner {
+        crafting = _crafting;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -245,6 +252,6 @@ abstract contract Rewards is ERC1155, Owned, ERC2771Context {
     /// @notice returns uri by id
     /// @return string with the format ipfs://<uri>/id.json
     function uri(uint256 id) public view override returns (string memory) {
-        return string.concat(tokenURI, "/", Strings.toString(id), ".json");
+        return string.concat(tokenURI, "/", Strings.toString(creatorId), "/", Strings.toString(id), ".json");
     }
 }

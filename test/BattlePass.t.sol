@@ -10,6 +10,7 @@ contract BattlePassTest is Test {
     BattlePass bp;
 
     address mockUser = address(1);
+    uint256 creatorId = 1;
     uint256 seasonId;
 
     LevelInfo[] levelInfo;
@@ -20,7 +21,7 @@ contract BattlePassTest is Test {
     event Undelegated(address indexed delegator, address indexed delegatee, uint256 indexed amount);
 
     function setUp() public {
-        bp = new BattlePass("", address(crafting));
+        bp = new BattlePass(creatorId, address(crafting));
         LevelInfo memory _levelInfo = LevelInfo(1, 0, 0, 0, 0);
         levelInfo.push(_levelInfo);
         _levelInfo = LevelInfo(1, 1, 10, 2, 10);
@@ -39,7 +40,6 @@ contract BattlePassTest is Test {
     }
 
     function testConstructor() public {
-        assertEq(bp.tokenURI(), "");
         assertEq(bp.crafting(), address(crafting));
         assertEq(bp.PREMIUM_PASS_STARTING_ID(), 1);
         assertEq(bp.CREATOR_TOKEN_ID(), 1000);
@@ -297,9 +297,19 @@ contract BattlePassTest is Test {
         bp.setURI("yes");
     }
 
-    function testURI() public {
+    function testSetURI() public {
         bp.setURI("yes");
         assertEq("yes", bp.tokenURI());
+    }
+
+    function testRevertSetCrafting() public {
+        unauthorized();
+        bp.setCrafting(address(2));
+    }
+
+    function testSeCrafting() public {
+        bp.setCrafting(address(2));
+        assertEq(address(2), bp.crafting());
     }
 
     function testRevertNewLootboxNonOwner() public {
@@ -486,7 +496,7 @@ contract BattlePassTest is Test {
     }
 
     function testUri() public {
-        assertEq(bp.uri(1), "/1.json");
+        assertEq(bp.uri(1), string.concat(bp.tokenURI(), "/", Strings.toString(creatorId), "/", Strings.toString(1), ".json"));
     }
 
     function testRevertCheckTypeOutOfBounds(uint256 id) public {

@@ -43,7 +43,7 @@ contract CraftingProxyTest is Test {
 contract CraftingTest is Test {
     address mockUser = address(1);
     uint256 inputLength = 3;
-
+    uint256 creatorId = 1;
     Ingredients input;
     Ingredients output;
 
@@ -55,12 +55,12 @@ contract CraftingTest is Test {
         vm.prank(address(0));
         crafting.setOwner(address(this));
         for (uint256 x = 0; x < inputLength; x++) {
-            BattlePass bp = new BattlePass("", address(crafting));
+            BattlePass bp = new BattlePass(creatorId, address(crafting));
             input.battlePasses.push(address(bp));
             input.ids.push(x + 1);
             input.qtys.push(x + 1);
         }
-        BattlePass bp = new BattlePass("", address(crafting));
+        BattlePass bp = new BattlePass(creatorId, address(crafting));
         output.battlePasses.push(address(bp));
         output.ids.push(10);
         output.qtys.push(1);
