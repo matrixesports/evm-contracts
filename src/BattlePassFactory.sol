@@ -9,7 +9,6 @@ import {Bytes32AddressLib} from "solmate/utils/Bytes32AddressLib.sol";
 /// @dev  adapted from https://github.com/Rari-Capital/vaults/blob/main/src/VaultFactory.sol
 /// @notice Factory which enables deploying a BattlePass for any creatorId
 contract BattlePassFactory is Owned {
-    using Bytes32AddressLib for address;
     using Bytes32AddressLib for bytes32;
 
     address public immutable craftingProxy;
