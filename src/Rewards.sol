@@ -72,7 +72,7 @@ abstract contract Rewards is ERC1155, Owned, ERC2771Context {
 
     event LootboxOpened(uint256 indexed lootboxId, uint256 indexed idxOpened, address indexed user);
 
-    constructor(uint256 _creatorId, address _crafting) Owned(msg.sender) ERC2771Context(msg.sender) {
+    constructor(uint256 _creatorId, address _crafting, address _owner) Owned(_owner) ERC2771Context(_owner) {
         tokenURI = "https://matrix-metadata-server.zeet-matrix.zeet.app";
         creatorId = _creatorId;
         crafting = _crafting;

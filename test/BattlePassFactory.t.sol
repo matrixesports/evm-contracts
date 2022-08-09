@@ -22,6 +22,7 @@ contract BattlePassFactoryTest is Test {
     function testDeploy(uint256 creatorId) public {
         BattlePass bp = factory.deployBattlePass(creatorId);
         assertEq(address(bp), address(factory.getBattlePassFromUnderlying(creatorId)));
+        assertEq(bp.owner(), address(this));
     }
 
     function testRevertDeployNonOwner(address hacker) public {

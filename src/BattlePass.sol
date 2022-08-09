@@ -71,7 +71,7 @@ contract BattlePass is Rewards {
     mapping(address => mapping(uint256 => User)) public userInfo;
 
     /// @dev crafting is allowed to mint burn tokens in battle pass
-    constructor(uint256 creatorId, address crafting) Rewards(creatorId, crafting) {}
+    constructor(uint256 creatorId, address crafting, address owner) Rewards(creatorId, crafting, owner) {}
 
     /// @notice gives xp to a user upon completion of quests
     /// @dev only owner can give xp

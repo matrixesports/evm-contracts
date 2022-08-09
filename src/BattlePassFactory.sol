@@ -1,25 +1,29 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.6.0 <0.9.0;
 
-import "./BattlePass.sol";
+import {BattlePass} from "./BattlePass.sol";
 import {ERC20} from "solmate/tokens/ERC20.sol";
 import {Bytes32AddressLib} from "solmate/utils/Bytes32AddressLib.sol";
 
 /// @title BattlePass Factory
 /// @dev  adapted from https://github.com/Rari-Capital/vaults/blob/main/src/VaultFactory.sol
 /// @notice Factory which enables deploying a BattlePass for any creatorId
-contract BattlePassFactory is Owned {
+contract BattlePassFactory {
     using Bytes32AddressLib for bytes32;
 
+    /// @dev they need to be constant for when we create2 addresses
+    /// constructor args need to be constant
     address public immutable craftingProxy;
+    address public immutable owner;
 
     /*///////////////////////////////////////////////////////////////
                                CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
     /// @notice Creates a BattlePass factory.
-    constructor(address _craftingProxy) Owned(msg.sender) {
+    constructor(address _craftingProxy) {
         craftingProxy = _craftingProxy;
+        owner = msg.sender;
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -35,8 +39,9 @@ contract BattlePassFactory is Owned {
     /// @dev This will revert if a BattlePass that accepts the same underlying creatorId has already been deployed.
     /// @param creatorId The creatorId that the BattlePass should accept.
     /// @return bp The newly deployed BattlePass contract
-    function deployBattlePass(uint256 creatorId) external onlyOwner returns (BattlePass bp) {
-        bp = new BattlePass{salt: bytes32(creatorId)}(creatorId, craftingProxy);
+    function deployBattlePass(uint256 creatorId) external returns (BattlePass bp) {
+        require(msg.sender == owner, "UNAUTHORIZED");
+        bp = new BattlePass{salt: bytes32(creatorId)}(creatorId, craftingProxy,owner);
         emit BattlePassDeployed(bp, creatorId);
     }
 
@@ -56,7 +61,7 @@ contract BattlePassFactory is Owned {
                         bytes1(0xFF),
                         address(this),
                         creatorId,
-                        keccak256(abi.encodePacked(type(BattlePass).creationCode, abi.encode(creatorId, craftingProxy)))
+                        keccak256(abi.encodePacked(type(BattlePass).creationCode, abi.encode(creatorId, craftingProxy, owner)))
                     )
                 )
                     // Prefix:

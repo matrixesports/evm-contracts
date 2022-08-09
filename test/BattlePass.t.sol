@@ -21,7 +21,7 @@ contract BattlePassTest is Test {
     event Undelegated(address indexed delegator, address indexed delegatee, uint256 indexed amount);
 
     function setUp() public {
-        bp = new BattlePass(creatorId, address(crafting));
+        bp = new BattlePass(creatorId, address(crafting),address(this));
         LevelInfo memory _levelInfo = LevelInfo(1, 0, 0, 0, 0);
         levelInfo.push(_levelInfo);
         _levelInfo = LevelInfo(1, 1, 10, 2, 10);

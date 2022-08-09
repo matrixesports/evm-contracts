@@ -20,12 +20,12 @@ contract CraftingTest is Test {
         vm.prank(address(0));
         crafting.setOwner(address(this));
         for (uint256 x = 0; x < inputLength; x++) {
-            BattlePass bp = new BattlePass(creatorId, address(crafting));
+            BattlePass bp = new BattlePass(creatorId, address(crafting),address(this));
             input.battlePasses.push(address(bp));
             input.ids.push(x + 1);
             input.qtys.push(x + 1);
         }
-        BattlePass bp = new BattlePass(creatorId, address(crafting));
+        BattlePass bp = new BattlePass(creatorId, address(crafting),address(this));
         output.battlePasses.push(address(bp));
         output.ids.push(10);
         output.qtys.push(1);
