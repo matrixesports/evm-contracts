@@ -78,7 +78,7 @@ make install
 ```
 Crafting: `0xE7B98903193560C037c0f07CD610Da427d0d0fE1`
 Crafting Proxy: `0x62eCAdfd5e3eF13ed8b09002838d0B5cc0857Cd3`
-BattlePassFactory: `0x5E81bEC5DEBE7e3330407E76C018eC5cBCcA1a1e`
+BattlePassFactory: `0x37C84b0c65201d78d0b05817ec80C9c28a799B65`
 ```
 
 ## Acknowledgements
