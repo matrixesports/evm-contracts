@@ -16,8 +16,11 @@ install 		:; yarn && yarn run prepare && foundryup && forge install && forge upd
 lint    		:; forge fmt
 
 #run dev script
-execute_matic 	:; forge script $(file) --rpc-url $(POLYGON_RPC) --private-key $(PVT_KEY) --etherscan-api-key $(POLYGONSCAN_API_KEY) --verify --delay 10 --retries 2 --broadcast --slow --sig $(sig) --chain-id 137 --with-gas-price 150000000000
+execute_matic 	:; forge script $(file) --rpc-url $(POLYGON_RPC) --private-key $(PVT_KEY) --etherscan-api-key $(POLYGONSCAN_API_KEY) --verify --delay 10 --retries 2 --broadcast --slow --sig $(sig) --chain-id 137 --with-gas-price 35000000000
 execute_mainnet	:; forge script $(file) --rpc-url $(MAINNET_RPC) --private-key $(PVT_KEY) --etherscan-api-key $(ETHERSCAN_API_KEY) --verify --broadcast --slow --sig $(sig)
+
+#fork and run
+fork_matic 		:;  forge script $(file) --sig $(sig) --fork-url $(POLYGON_RPC) --chain-id 137 -vvvvv
 
 #line coverage, https://mirror.xyz/devanon.eth/RrDvKPnlD-pmpuW7hQeR5wWdVjklrpOgPCOA-PJkWFU
 #for html reports, `brew install lcov` & go live with reports/ directory.
