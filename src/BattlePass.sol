@@ -147,7 +147,7 @@ contract BattlePass is Rewards {
      * @param _level level at which to claim the reward
      * @param premium true when claiming a premium reward
      */
-    function claimReward(uint256 _seasonId, uint256 _level, bool premium) external {
+    function claimReward(uint256 _seasonId, uint256 _level, bool premium, bool atomic) external returns (int256) {
         address user = _msgSender();
         if (level(user, _seasonId) < _level) {
             revert NotAtLevelNeededToClaimReward();
@@ -159,26 +159,41 @@ contract BattlePass is Rewards {
             revert RewardAlreadyClaimed();
         }
         tempUserInfo.claimed[_level][premium] = true;
-
+        uint256 rewardId;
+        uint256 rewardQty;
+        RewardType rewardType;
         if (premium) {
             if (seasonInfo[_seasonId][_level].premiumRewardId == 0) {
-                return;
+                return -1;
             }
             if (isUserPremium(user, _seasonId)) {
+                rewardId = seasonInfo[_seasonId][_level].premiumRewardId;
+                rewardQty = seasonInfo[_seasonId][_level].premiumRewardQty;
                 if (!tempUserInfo.claimedPremiumPass) {
                     tempUserInfo.claimedPremiumPass = true;
                     _burn(user, _seasonId, 1);
                 }
-                _mint(user, seasonInfo[_seasonId][_level].premiumRewardId, seasonInfo[_seasonId][_level].premiumRewardQty, "");
             } else {
                 revert NeedPremiumPassToClaimPremiumReward();
             }
         } else {
             if (seasonInfo[_seasonId][_level].freeRewardId == 0) {
-                return;
+                return -1;
             }
-            _mint(user, seasonInfo[_seasonId][_level].freeRewardId, seasonInfo[_seasonId][_level].freeRewardQty, "");
+            rewardId = seasonInfo[_seasonId][_level].freeRewardId;
+            rewardQty = seasonInfo[_seasonId][_level].freeRewardQty;
         }
+        _mint(user, rewardId, rewardQty, "");
+        rewardType = checkType(rewardId);
+        // assume qty is 1
+        if (rewardType == RewardType.LOOTBOX && atomic) {
+            return int256(openLootbox(rewardId));
+        }
+        if (rewardType == RewardType.REDEEMABLE && atomic) {
+            _burn(user, rewardId, 1);
+            return -1;
+        }
+        return -1;
     }
 
     /*//////////////////////////////////////////////////////////////////////
