@@ -125,30 +125,35 @@ contract BattlePassTest is Test {
     function testRevertClaimRewardNotAtLevel() public {
         vm.startPrank(mockUser);
         vm.expectRevert(NotAtLevelNeededToClaimReward.selector);
-        bp.claimReward(seasonId, 1, false, false);
+        bp.claimReward(seasonId, 1, false);
     }
 
     function testRevertClaimRewardAlreadyClaimed() public {
         bp.giveXp(seasonId, 10, mockUser);
         vm.startPrank(mockUser);
-        bp.claimReward(seasonId, 1, false, false);
+        bp.claimReward(seasonId, 1, false);
         vm.expectRevert(RewardAlreadyClaimed.selector);
-        bp.claimReward(seasonId, 1, false, false);
+        bp.claimReward(seasonId, 1, false);
     }
 
     function testRevertClaimRewardNoPremium() public {
         bp.giveXp(seasonId, 10, mockUser);
         vm.startPrank(mockUser);
         vm.expectRevert(NeedPremiumPassToClaimPremiumReward.selector);
-        bp.claimReward(seasonId, 1, true, false);
+        bp.claimReward(seasonId, 1, true);
     }
 
     function testClaimReward() public {
         bp.giveXp(seasonId, 100, mockUser);
         vm.startPrank(mockUser);
 
-        for (uint256 x; x < levelInfo.length; x++) {
-            bp.claimReward(seasonId, x, false, false);
+        uint256 startGas = gasleft();
+        bp.claimReward(seasonId, 1, false);
+        console.log("Gas used: ", startGas - gasleft(), " free reward");
+        assertEq(bp.balanceOf(mockUser, levelInfo[1].freeRewardId), levelInfo[1].freeRewardQty);
+        assertTrue(bp.isRewardClaimed(mockUser, seasonId, 1, false));
+        for (uint256 x = 2; x < levelInfo.length; x++) {
+            bp.claimReward(seasonId, x, false);
             assertEq(bp.balanceOf(mockUser, levelInfo[x].freeRewardId), levelInfo[x].freeRewardQty);
             assertTrue(bp.isRewardClaimed(mockUser, seasonId, x, false));
         }
@@ -157,7 +162,7 @@ contract BattlePassTest is Test {
         //premium reward at level 0 is 0, claiming it shouldnt burn the premium pass
         assertTrue(bp.isUserPremium(mockUser, seasonId));
         uint256 oldPremiumPassBalance = bp.balanceOf(mockUser, seasonId);
-        bp.claimReward(seasonId, 0, true, false);
+        bp.claimReward(seasonId, 0, true);
         uint256 newPremiumPassBalance = bp.balanceOf(mockUser, seasonId);
         assertEq(oldPremiumPassBalance, newPremiumPassBalance);
 
@@ -165,13 +170,15 @@ contract BattlePassTest is Test {
         assertFalse(claimedPremiumPass);
 
         //claiming first premium reward should burn it
-        bp.claimReward(seasonId, 1, true, false);
+        startGas = gasleft();
+        bp.claimReward(seasonId, 1, true);
+        console.log("Gas used: ", startGas - gasleft(), " first premium reward");
         (, claimedPremiumPass) = bp.userInfo(mockUser, seasonId);
         assertTrue(claimedPremiumPass);
         assertEq(oldPremiumPassBalance - 1, bp.balanceOf(mockUser, seasonId));
 
         for (uint256 x = 2; x < levelInfo.length; x++) {
-            bp.claimReward(seasonId, x, true, false);
+            bp.claimReward(seasonId, x, true);
             assertEq(bp.balanceOf(mockUser, levelInfo[x].premiumRewardId), levelInfo[x].premiumRewardQty);
             assertTrue(bp.isRewardClaimed(mockUser, seasonId, x, true));
         }
@@ -182,35 +189,44 @@ contract BattlePassTest is Test {
         LevelInfo memory _levelInfo = LevelInfo(1, 2, 1, 2, 1); // id:6
         levelInfo.push(_levelInfo);
         uint256 lootboxId = createLootbox();
+        _levelInfo = LevelInfo(1, lootboxId, 1, lootboxId, 1);
+        levelInfo.push(_levelInfo);
         _levelInfo = LevelInfo(0, lootboxId, 1, lootboxId, 1);
         levelInfo.push(_levelInfo);
         seasonId = bp.newSeason(levelInfo);
 
         bp.giveXp(seasonId, 100, mockUser);
         vm.startPrank(mockUser);
-        bp.claimReward(seasonId, 6, false, false);
+        bp.claimReward(seasonId, 6, false);
         assertEq(bp.balanceOf(mockUser, levelInfo[6].freeRewardId), levelInfo[6].freeRewardQty);
         assertTrue(bp.isRewardClaimed(mockUser, seasonId, 6, false));
         assertTrue(bp.isUserPremium(mockUser, seasonId));
         //already gave a premium pass in free reward
         //premium reward at level 0 is 0, claiming it shouldnt burn the premium pass
         uint256 oldPremiumPassBalance = bp.balanceOf(mockUser, seasonId);
-        bp.claimReward(seasonId, 0, true, false);
+        bp.claimReward(seasonId, 0, true);
         uint256 newPremiumPassBalance = bp.balanceOf(mockUser, seasonId);
         assertEq(oldPremiumPassBalance, newPremiumPassBalance);
         (, bool claimedPremiumPass) = bp.userInfo(mockUser, seasonId);
         assertFalse(claimedPremiumPass);
         //claiming first premium reward should burn it
-        bp.claimReward(seasonId, 1, true, false);
-        (, claimedPremiumPass) = bp.userInfo(mockUser, seasonId);
-        assertTrue(claimedPremiumPass);
-        assertEq(oldPremiumPassBalance - 1 + levelInfo[1].freeRewardQty, bp.balanceOf(mockUser, seasonId));
-
-        uint256 idxOpened = uint256(bp.claimReward(seasonId, 7, true, true));
+        uint256 startGas = gasleft();
+        uint256 idxOpened = bp.claimRewardAtomic(seasonId, 7, true);
+        console.log("Gas used: ", startGas - gasleft(), " first prem reward");
         for (uint256 y; y < lootbox[idxOpened].ids.length; y++) {
             assertEq(bp.balanceOf(mockUser, lootbox[idxOpened].ids[y]), lootbox[idxOpened].qtys[y]);
         }
-        assertEq(bp.balanceOf(mockUser, lootboxId), 0);
+        (, claimedPremiumPass) = bp.userInfo(mockUser, seasonId);
+        assertTrue(claimedPremiumPass);
+        assertEq(oldPremiumPassBalance - 1, bp.balanceOf(mockUser, seasonId));
+
+        startGas = gasleft();
+        idxOpened = bp.claimRewardAtomic(seasonId, 8, false);
+        console.log("Gas used: ", startGas - gasleft(), " free lootbox");
+
+        startGas = gasleft();
+        idxOpened = bp.claimRewardAtomic(seasonId, 8, true);
+        console.log("Gas used: ", startGas - gasleft(), " prem lootbox");
     }
 
     function testClaimRewardAtomicRedeem() public {
@@ -224,25 +240,26 @@ contract BattlePassTest is Test {
 
         bp.giveXp(seasonId, 100, mockUser);
         vm.startPrank(mockUser);
-        bp.claimReward(seasonId, 6, false, false);
+        bp.claimReward(seasonId, 6, false);
         assertEq(bp.balanceOf(mockUser, levelInfo[6].freeRewardId), levelInfo[6].freeRewardQty);
         assertTrue(bp.isRewardClaimed(mockUser, seasonId, 6, false));
         assertTrue(bp.isUserPremium(mockUser, seasonId));
         //already gave a premium pass in free reward
         //premium reward at level 0 is 0, claiming it shouldnt burn the premium pass
         uint256 oldPremiumPassBalance = bp.balanceOf(mockUser, seasonId);
-        bp.claimReward(seasonId, 0, true, false);
+        bp.claimReward(seasonId, 0, true);
         uint256 newPremiumPassBalance = bp.balanceOf(mockUser, seasonId);
         assertEq(oldPremiumPassBalance, newPremiumPassBalance);
         (, bool claimedPremiumPass) = bp.userInfo(mockUser, seasonId);
         assertFalse(claimedPremiumPass);
         //claiming first premium reward should burn it
-        bp.claimReward(seasonId, 1, true, false);
+        bp.claimReward(seasonId, 1, true);
         (, claimedPremiumPass) = bp.userInfo(mockUser, seasonId);
         assertTrue(claimedPremiumPass);
         assertEq(oldPremiumPassBalance - 1 + levelInfo[1].freeRewardQty, bp.balanceOf(mockUser, seasonId));
-
-        uint256(bp.claimReward(seasonId, 4, true, true));
+        uint256 startGas = gasleft();
+        uint256(bp.claimRewardAtomic(seasonId, 4, true));
+        console.log("Gas used: ", startGas - gasleft());
         assertEq(bp.balanceOf(mockUser, levelInfo[4].freeRewardQty), 0);
     }
 
@@ -251,7 +268,7 @@ contract BattlePassTest is Test {
 
         for (uint256 x; x < levelInfo.length; x++) {
             (bool success,) = address(bp).call(
-                abi.encodePacked(abi.encodeWithSelector(bp.claimReward.selector, seasonId, x, false, false), mockUser)
+                abi.encodePacked(abi.encodeWithSelector(bp.claimReward.selector, seasonId, x, false), mockUser)
             );
             assertTrue(success);
             assertEq(bp.balanceOf(mockUser, levelInfo[x].freeRewardId), levelInfo[x].freeRewardQty);
@@ -262,9 +279,8 @@ contract BattlePassTest is Test {
         //premium reward at level 0 is 0, claiming it shouldnt burn the premium pass
         assertTrue(bp.isUserPremium(mockUser, seasonId));
         uint256 oldPremiumPassBalance = bp.balanceOf(mockUser, seasonId);
-        (bool success,) = address(bp).call(
-            abi.encodePacked(abi.encodeWithSelector(bp.claimReward.selector, seasonId, 0, true, false), mockUser)
-        );
+        (bool success,) =
+            address(bp).call(abi.encodePacked(abi.encodeWithSelector(bp.claimReward.selector, seasonId, 0, true), mockUser));
         assertTrue(success);
         uint256 newPremiumPassBalance = bp.balanceOf(mockUser, seasonId);
         assertEq(oldPremiumPassBalance, newPremiumPassBalance);
@@ -273,18 +289,16 @@ contract BattlePassTest is Test {
         assertFalse(claimedPremiumPass);
 
         //claiming first premium reward should burn it
-        (success,) = address(bp).call(
-            abi.encodePacked(abi.encodeWithSelector(bp.claimReward.selector, seasonId, 1, true, false), mockUser)
-        );
+        (success,) =
+            address(bp).call(abi.encodePacked(abi.encodeWithSelector(bp.claimReward.selector, seasonId, 1, true), mockUser));
         assertTrue(success);
         (, claimedPremiumPass) = bp.userInfo(mockUser, seasonId);
         assertTrue(claimedPremiumPass);
         assertEq(oldPremiumPassBalance - 1, bp.balanceOf(mockUser, seasonId));
 
         for (uint256 x = 2; x < levelInfo.length; x++) {
-            (success,) = address(bp).call(
-                abi.encodePacked(abi.encodeWithSelector(bp.claimReward.selector, seasonId, x, true, false), mockUser)
-            );
+            (success,) =
+                address(bp).call(abi.encodePacked(abi.encodeWithSelector(bp.claimReward.selector, seasonId, x, true), mockUser));
             assertTrue(success);
             assertEq(bp.balanceOf(mockUser, levelInfo[x].premiumRewardId), levelInfo[x].premiumRewardQty);
             assertTrue(bp.isRewardClaimed(mockUser, seasonId, x, true));
@@ -300,7 +314,7 @@ contract BattlePassTest is Test {
         bp.mint(anotherMockUser, seasonId, 1);
         bp.giveXp(seasonId, 10, mockUser);
         vm.prank(mockUser);
-        bp.claimReward(seasonId, 1, true, false);
+        bp.claimReward(seasonId, 1, true);
         assertEq(0, bp.balanceOf(mockUser, seasonId));
         assertTrue(bp.isUserPremium(mockUser, seasonId));
     }
@@ -328,7 +342,7 @@ contract BattlePassTest is Test {
         bp.giveXp(seasonId, 100, mockUser);
         vm.startPrank(mockUser);
         assertFalse(bp.isRewardClaimed(mockUser, seasonId, 1, false));
-        bp.claimReward(seasonId, 1, false, false);
+        bp.claimReward(seasonId, 1, false);
         assertTrue(bp.isRewardClaimed(mockUser, seasonId, 1, false));
     }
 
