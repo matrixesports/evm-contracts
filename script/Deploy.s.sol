@@ -7,7 +7,9 @@ import "../src/Crafting.sol";
 import "../src/uups/ERC1967Proxy.sol";
 
 contract DeployScript is Script {
-    function run() public {}
+    function run() public {
+        deploy();
+    }
 
     function deploy() public {
         vm.startBroadcast();
@@ -26,10 +28,10 @@ contract DeployScript is Script {
     }
 
     function deployCreator() public {
-        vm.startBroadcast();
-        BattlePassFactory factory = BattlePassFactory(0x5E81bEC5DEBE7e3330407E76C018eC5cBCcA1a1e);
-        // factory.deployBattlePass(1);
-        BattlePass bp = factory.getBattlePassFromUnderlying(1);
-        console.log(address(bp));
+        // vm.startBroadcast();
+        // BattlePassFactory factory = BattlePassFactory(0x5E81bEC5DEBE7e3330407E76C018eC5cBCcA1a1e);
+        // // factory.deployBattlePass(1);
+        // BattlePass bp = factory.getBattlePassFromUnderlying(1);
+        // console.log(address(bp));
     }
 }
