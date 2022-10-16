@@ -155,7 +155,7 @@ abstract contract Rewards is ERC1155, Owned, ERC2771Context {
     /// @notice opens a lootbox
     /// @dev upto user to not send a bad id here.
     /// @param id lootboxId to open
-    function openLootbox(uint256 id) external returns (uint256) {
+    function openLootbox(uint256 id) public returns (uint256) {
         address user = _msgSender();
         _burn(user, id, 1);
         uint256 idx = calculateRandom(id);
@@ -233,7 +233,7 @@ abstract contract Rewards is ERC1155, Owned, ERC2771Context {
     //////////////////////////////////////////////////////////////////////*/
 
     /// @notice checks a reward type by id; will revert for 0
-    function checkType(uint256 id) external pure returns (RewardType) {
+    function checkType(uint256 id) public pure returns (RewardType) {
         if (id == CREATOR_TOKEN_ID) {
             return RewardType.CREATOR_TOKEN;
         } else if (id >= PREMIUM_PASS_STARTING_ID && id < CREATOR_TOKEN_ID) {

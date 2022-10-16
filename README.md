@@ -76,9 +76,9 @@ make install
 #### MATIC:
 
 ```
-Crafting: `0xE7B98903193560C037c0f07CD610Da427d0d0fE1`
-Crafting Proxy: `0x62eCAdfd5e3eF13ed8b09002838d0B5cc0857Cd3`
-BattlePassFactory: `0x37C84b0c65201d78d0b05817ec80C9c28a799B65`
+Crafting: `0xA789fF4664FA63F81C4bd2597775D74512F92Dd8`
+Crafting Proxy: `0x71Bc7af5d816dAe3061D6972AC8BCC92D71Ec4f0`
+BattlePassFactory: `0x50c9a6c238eA2a2312562666e19Bfb79F8B0eca2`
 ```
 
 ## Acknowledgements

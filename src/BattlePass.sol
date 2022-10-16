@@ -181,6 +181,67 @@ contract BattlePass is Rewards {
         }
     }
 
+    /**
+     * @notice claims a reward for a seasonId and at level with atomic open and redeem
+     * @dev reverts when:
+     * user claims a reward for a level at which they are NOT
+     * user claims an already claimed reward
+     * user claims a premium reward, but is NOT eligible for it
+     * when a user has a premium pass and it is their first time claiming a premium reward then
+     * burn 1 pass from their balance and set claimedPremiumPass to be true
+     * a user can own multiple premium passes just like any other reward
+     * it will NOT be burned if the user has already claimed a premium reward
+     * @param _seasonId seasonId for which to claim the reward
+     * @param _level level at which to claim the reward
+     * @param premium true when claiming a premium reward
+     */
+    function claimRewardAtomic(uint256 _seasonId, uint256 _level, bool premium) external returns (uint256) {
+        address user = _msgSender();
+        if (level(user, _seasonId) < _level) {
+            revert NotAtLevelNeededToClaimReward();
+        }
+
+        User storage tempUserInfo = userInfo[user][_seasonId];
+
+        if (tempUserInfo.claimed[_level][premium]) {
+            revert RewardAlreadyClaimed();
+        }
+        tempUserInfo.claimed[_level][premium] = true;
+        uint256 rewardId;
+        uint256 rewardQty;
+        if (premium) {
+            if (seasonInfo[_seasonId][_level].premiumRewardId == 0) {
+                return 0;
+            }
+            if (isUserPremium(user, _seasonId)) {
+                rewardId = seasonInfo[_seasonId][_level].premiumRewardId;
+                rewardQty = seasonInfo[_seasonId][_level].premiumRewardQty;
+                if (!tempUserInfo.claimedPremiumPass) {
+                    tempUserInfo.claimedPremiumPass = true;
+                    _burn(user, _seasonId, 1);
+                }
+            } else {
+                revert NeedPremiumPassToClaimPremiumReward();
+            }
+        } else {
+            if (seasonInfo[_seasonId][_level].freeRewardId == 0) {
+                return 0;
+            }
+            rewardId = seasonInfo[_seasonId][_level].freeRewardId;
+            rewardQty = seasonInfo[_seasonId][_level].freeRewardQty;
+        }
+
+        if (checkType(rewardId) == RewardType.LOOTBOX) {
+            _mint(user, rewardId, rewardQty, "");
+            return openLootbox(rewardId);
+        }
+        if (checkType(rewardId) == RewardType.REDEEMABLE) {
+            return 0;
+        }
+        _mint(user, rewardId, rewardQty, "");
+        return 0;
+    }
+
     /*//////////////////////////////////////////////////////////////////////
                             UTILS
     //////////////////////////////////////////////////////////////////////*/
