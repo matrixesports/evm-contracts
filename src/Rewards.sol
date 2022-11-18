@@ -9,7 +9,7 @@ import "openzeppelin-contracts/contracts/metatx/ERC2771Context.sol";
 /// @dev DO NOT CHANGE ORDERING, web3 service depends on this
 enum REWARD_TYPE {
     PREMIUM_PASS,
-    CREATOR_TOKEN,
+    REPUTATION,
     LOOTBOX,
     REDEEMABLE,
     SPECIAL
@@ -28,10 +28,8 @@ struct LootboxOption {
     uint256[] qtys;
 }
 
-// infinity: -1
 struct RewardInfo {
     REWARD_TYPE rewardType;
-    int256 limit;
 }
 
 /// @dev used when a reward is invalid or non-existent
@@ -39,9 +37,6 @@ error InvalidId(uint256 _id);
 
 /// @dev pls dont get here
 error LOLHowDidYouGetHere(uint256 _Id);
-
-/// @dev used when claiming a reward outside of qty limit
-error RewardLimit(uint256 _id);
 
 /// @dev used when the details for a new lootbox are incorrect
 error IncorrectLootboxOptions();
@@ -66,9 +61,11 @@ abstract contract Rewards is ERC1155, Owned, ERC2771Context {
     uint256 public immutable creatorId;
     string public tokenURI;
 
-    uint256 public constant CREATOR_TOKEN = 1;
-    /// @dev id 1 is reserved for creator_token
-    uint256 public id = CREATOR_TOKEN;
+    /// @dev used for reputation
+    uint256 public constant REPUTATION_TOKEN = 1;
+
+    /// @dev id 1 is reserved for reputation_token and 99 for premium passes
+    uint256 public id = 100;
 
     /// @dev id -> rewardInfo
     mapping(uint256 => RewardInfo) internal rewardInfo;
@@ -85,19 +82,7 @@ abstract contract Rewards is ERC1155, Owned, ERC2771Context {
     }
 
     /// @notice allows the owner/crafting contract to mint tokens
-    /// @param _to mint to address
-    /// @param _id mint id
-    /// @param _amount mint amount
     function mint(address _to, uint256 _id, uint256 _amount) public {
-        if (_id > id) {
-            revert InvalidId(_id);
-        }
-        if (rewardInfo[_id].limit == 0) {
-            revert RewardLimit(_id);
-        }
-        if (rewardInfo[_id].limit != -1) {
-            rewardInfo[_id].limit--;
-        }
         if (owner == msg.sender || msg.sender == crafting) {
             _mint(_to, _id, _amount, "");
         } else {
@@ -106,13 +91,7 @@ abstract contract Rewards is ERC1155, Owned, ERC2771Context {
     }
 
     /// @notice allows the owner/crafting contract to burn tokens
-    /// @param _to burn from address
-    /// @param _id burn id
-    /// @param _amount burn amount
     function burn(address _to, uint256 _id, uint256 _amount) public {
-        if (_id > id) {
-            revert InvalidId(_id);
-        }
         if (owner == msg.sender || msg.sender == crafting) {
             _burn(_to, _id, _amount);
         } else {
@@ -120,17 +99,15 @@ abstract contract Rewards is ERC1155, Owned, ERC2771Context {
         }
     }
 
-    /// @notice opens a lootbox
-    /// @param _id lootboxId to open
+    /**
+     * @notice opens a lootbox
+     * @param _id lootboxId to open
+     */
     function openLootbox(uint256 _id) public returns (uint256) {
         address user = _msgSender();
         if (rewardInfo[_id].rewardType != REWARD_TYPE.LOOTBOX) {
             revert InvalidId(_id);
         }
-        if (rewardInfo[_id].limit == 0) {
-            revert RewardLimit(_id);
-        }
-        rewardInfo[_id].limit--;
         _burn(user, id, 1);
         uint256 idx = calculateRandom(id);
         LootboxOption memory option = lootboxRewards[id][idx];
@@ -140,15 +117,11 @@ abstract contract Rewards is ERC1155, Owned, ERC2771Context {
     }
 
     /// @notice sets the uri
-    /// @dev only owner can set it
-    /// @param _uri new string with the format https://<>/creatorId/id.json
     function setURI(string memory _uri) external onlyOwner {
         tokenURI = _uri;
     }
 
     /// @notice sets the crafting proxy address
-    /// @dev only owner can set it
-    /// @param _crafting new address
     function setCrafting(address _crafting) external onlyOwner {
         crafting = _crafting;
     }
@@ -156,13 +129,12 @@ abstract contract Rewards is ERC1155, Owned, ERC2771Context {
     /**
      * @notice creates a new lootbox
      * @dev reverts when:
-     * joint rarity of all LootboxOptions does not add up to 100
-     * ids.length != qtys.length
-     * ids are invalid
+     *      joint rarity of all LootboxOptions does not add up to 100
+     *      ids.length != qtys.length
+     *      ids are invalid
      * @param _options all the LootboxOptions avaliable in a lootbox
-     * @return lootboxId
      */
-    function newLootbox(LootboxOption[] memory _options, int256 _limit) external onlyOwner returns (uint256) {
+    function newLootbox(LootboxOption[] memory _options) external onlyOwner {
         id++;
         uint256 cumulativeProbability;
         for (uint256 x = 0; x < _options.length; x++) {
@@ -176,23 +148,10 @@ abstract contract Rewards is ERC1155, Owned, ERC2771Context {
             revert IncorrectLootboxOptions();
         }
         rewardInfo[id].rewardType = REWARD_TYPE.LOOTBOX;
-        rewardInfo[id].limit = _limit;
-        return id;
     }
 
-    function createReward(RewardInfo calldata _rewardInfo) external onlyOwner {
-        if (_rewardInfo.limit != -1 || _rewardInfo.limit > 0) {
-            revert IncorrectRewardInfo();
-        }
-        id++;
-        rewardInfo[id] = _rewardInfo;
-    }
-
-    function createRewards(RewardInfo[] calldata _rewardInfos) external onlyOwner {
+    function createReward(RewardInfo[] calldata _rewardInfos) external onlyOwner {
         for (uint256 i; i < _rewardInfos.length; i++) {
-            if (_rewardInfos[i].limit != -1 || _rewardInfos[i].limit > 0) {
-                revert IncorrectRewardInfo();
-            }
             id++;
             rewardInfo[id] = _rewardInfos[i];
         }
@@ -225,7 +184,6 @@ abstract contract Rewards is ERC1155, Owned, ERC2771Context {
     }
 
     /// @notice returns uri by id
-    /// @return string with the format ipfs://<uri>/id.json
     function uri(uint256 _id) public view override returns (string memory) {
         return string.concat(tokenURI, "/", Strings.toString(creatorId), "/", Strings.toString(_id), ".json");
     }

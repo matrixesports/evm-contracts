@@ -10,7 +10,7 @@ enum LOOTDROP_TYPE {
 
 enum LOOTDROP_REQUIREMENTS {
     REPUTATION,
-    SEASONXP
+    XP
 }
 
 /**
@@ -27,6 +27,8 @@ struct LevelInfo {
     uint256 freeRewardQty;
     uint256 premiumRewardId;
     uint256 premiumRewardQty;
+    int256 freeLimit;
+    int256 premLimit; // -1 for inifity
 }
 
 struct LootdropInfo {
@@ -35,6 +37,10 @@ struct LootdropInfo {
     LOOTDROP_TYPE lootdropType;
     LOOTDROP_REQUIREMENTS lootdropReq;
     uint256 threshold;
+    uint256 start;
+    uint256 end;
+    uint256 count;
+    int256 limit;
 }
 
 /**
@@ -73,6 +79,16 @@ error LootdropRequirments();
 
 error LootdropAlreadyClaimed();
 
+error LootdropInactive();
+
+/// @dev use when user draws a winner from an active *giveaway* lootdrop
+error LootdropStillActive();
+
+error LootdropLimit();
+
+/// @dev used when claiming a reward outside of qty limit
+error RewardLimit();
+
 /**
  * @title A Battle Pass
  * @author rayquaza7 && BoManev
@@ -85,8 +101,8 @@ error LootdropAlreadyClaimed();
  * Rewards can be { NFTs, Tokens, Lootboxes, Redeemables }
  */
 contract BattlePass is Rewards {
-    /// @dev current active seasonId
-    uint256 public seasonId;
+    /// @dev current active seasonId; [2..99]
+    uint256 public seasonId = 1;
 
     uint256 public lootdropId;
 
@@ -100,7 +116,10 @@ contract BattlePass is Rewards {
     mapping(uint256 => LootdropInfo) public lootdropInfo;
 
     /// @dev user -> lootdropId
-    mapping(address => uint256) public lootdropClaims;
+    mapping(address => uint256) public lootdropClaim;
+
+    /// @dev lootdropEntry -> user
+    mapping(uint256 => address) public lootdropEntry;
 
     /// @dev crafting is allowed to mint burn tokens in battle pass
     constructor(uint256 _creatorId, address _crafting, address _owner) Rewards(_creatorId, _crafting, _owner) {}
@@ -109,8 +128,39 @@ contract BattlePass is Rewards {
                                 METATX
     //////////////////////////////////////////////////////////////*/
 
+    function checkClaim(address _user, uint256 _seasonId, uint256 _level, bool _premium) internal {
+        if (level(_user, _seasonId) < _level) {
+            revert NotAtLevelNeededToClaimReward();
+        }
+        if (userInfo[_user][_seasonId].claimed[_level][_premium]) {
+            revert RewardAlreadyClaimed();
+        }
+        if (_premium) {
+            if (seasonInfo[_seasonId][_level].premLimit == 0) {
+                revert RewardLimit();
+            } else if (seasonInfo[_seasonId][_level].premLimit != -1) {
+                seasonInfo[_seasonId][_level].premLimit--;
+            }
+            if (isUserPremium(_user, _seasonId)) {
+                if (!userInfo[_user][_seasonId].claimedPremiumPass) {
+                    userInfo[_user][_seasonId].claimedPremiumPass = true;
+                    burn(_user, _seasonId, 1);
+                }
+            } else {
+                revert NeedPremiumPassToClaimPremiumReward();
+            }
+        } else {
+            if (seasonInfo[_seasonId][_level].freeLimit == 0) {
+                revert RewardLimit();
+            } else if (seasonInfo[_seasonId][_level].freeLimit != -1) {
+                seasonInfo[_seasonId][_level].freeLimit--;
+            }
+        }
+        userInfo[_user][_seasonId].claimed[_level][_premium] = true;
+    }
+
     /**
-     * @notice claims a reward for a seasonId and at level
+     * @notice claims a reward for the current season
      * @dev reverts when:
      * user claims a reward for a level at which they are NOT
      * user claims an already claimed reward
@@ -119,46 +169,21 @@ contract BattlePass is Rewards {
      * burn 1 pass from their balance and set claimedPremiumPass to be true
      * a user can own multiple premium passes just like any other reward
      * it will NOT be burned if the user has already claimed a premium reward
-     * @param _seasonId seasonId for which to claim the reward
      * @param _level level at which to claim the reward
      * @param _premium true when claiming a premium reward
      */
-    function claimReward(uint256 _seasonId, uint256 _level, bool _premium) external {
+    function claimReward(uint256 _level, bool _premium) external {
         address user = _msgSender();
-        if (level(user, _seasonId) < _level) {
-            revert NotAtLevelNeededToClaimReward();
-        }
-
-        User storage tempUserInfo = userInfo[user][_seasonId];
-
-        if (tempUserInfo.claimed[_level][_premium]) {
-            revert RewardAlreadyClaimed();
-        }
-        tempUserInfo.claimed[_level][_premium] = true;
-
-        if (_premium) {
-            if (seasonInfo[_seasonId][_level].premiumRewardId == 0) {
-                return;
-            }
-            if (isUserPremium(user, _seasonId)) {
-                if (!tempUserInfo.claimedPremiumPass) {
-                    tempUserInfo.claimedPremiumPass = true;
-                    burn(user, _seasonId, 1);
-                }
-                mint(user, seasonInfo[_seasonId][_level].premiumRewardId, seasonInfo[_seasonId][_level].premiumRewardQty);
-            } else {
-                revert NeedPremiumPassToClaimPremiumReward();
-            }
-        } else {
-            if (seasonInfo[_seasonId][_level].freeRewardId == 0) {
-                return;
-            }
-            mint(user, seasonInfo[_seasonId][_level].freeRewardId, seasonInfo[_seasonId][_level].freeRewardQty);
+        checkClaim(user, seasonId, _level, _premium);
+        if (_premium && seasonInfo[seasonId][_level].premiumRewardId > 0) {
+            _mint(user, seasonInfo[seasonId][_level].premiumRewardId, seasonInfo[seasonId][_level].premiumRewardQty, "");
+        } else if (!_premium && seasonInfo[seasonId][_level].freeRewardId > 0) {
+            _mint(user, seasonInfo[seasonId][_level].freeRewardId, seasonInfo[seasonId][_level].freeRewardQty, "");
         }
     }
 
     /**
-     * @notice claims a reward for a seasonId and at level with atomic open and redeem
+     * @notice claims a reward for the current season with atomic open and redeem
      * @dev reverts when:
      * user claims a reward for a level at which they are NOT
      * user claims an already claimed reward
@@ -171,51 +196,24 @@ contract BattlePass is Rewards {
      * @param _level level at which to claim the reward
      * @param _premium true when claiming a premium reward
      */
-    function claimRewardAtomic(uint256 _seasonId, uint256 _level, bool _premium) external returns (uint256) {
+    function claimRewardAtomic(uint256 _seasonId, uint256 _level, bool _premium) external {
         address user = _msgSender();
-        if (level(user, _seasonId) < _level) {
-            revert NotAtLevelNeededToClaimReward();
-        }
-
-        User storage tempUserInfo = userInfo[user][_seasonId];
-
-        if (tempUserInfo.claimed[_level][_premium]) {
-            revert RewardAlreadyClaimed();
-        }
-        tempUserInfo.claimed[_level][_premium] = true;
+        checkClaim(user, _seasonId, _level, _premium);
         uint256 rewardId;
         uint256 rewardQty;
         if (_premium) {
-            if (seasonInfo[_seasonId][_level].premiumRewardId == 0) {
-                return 0;
-            }
-            if (isUserPremium(user, _seasonId)) {
-                rewardId = seasonInfo[_seasonId][_level].premiumRewardId;
-                rewardQty = seasonInfo[_seasonId][_level].premiumRewardQty;
-                if (!tempUserInfo.claimedPremiumPass) {
-                    tempUserInfo.claimedPremiumPass = true;
-                    burn(user, _seasonId, 1);
-                }
-            } else {
-                revert NeedPremiumPassToClaimPremiumReward();
-            }
+            rewardId = seasonInfo[_seasonId][_level].premiumRewardId;
+            rewardQty = seasonInfo[_seasonId][_level].premiumRewardQty;
         } else {
-            if (seasonInfo[_seasonId][_level].freeRewardId == 0) {
-                return 0;
-            }
             rewardId = seasonInfo[_seasonId][_level].freeRewardId;
             rewardQty = seasonInfo[_seasonId][_level].freeRewardQty;
         }
-
-        if (rewardInfo[rewardId].rewardType == REWARD_TYPE.LOOTBOX) {
-            mint(user, rewardId, rewardQty);
-            return openLootbox(rewardId);
+        if (rewardId > 0) {
+            _mint(user, rewardId, rewardQty, "");
+            if (rewardInfo[rewardId].rewardType == REWARD_TYPE.LOOTBOX) {
+                openLootbox(rewardId);
+            }
         }
-        if (rewardInfo[rewardId].rewardType == REWARD_TYPE.REDEEMABLE) {
-            return 0;
-        }
-        mint(user, rewardId, rewardQty);
-        return 0;
     }
 
     /*//////////////////////////////////////////////////////////////
@@ -224,78 +222,53 @@ contract BattlePass is Rewards {
 
     /**
      * @notice creates a new season
-     * @dev only owner can call it
      * @param levelInfo info about each level, levelInfo[0] corresponds to info on a level 0
      * last level must be (levelInfo.length - 1) and must have xpToCompleteLevel == 0
-     * @return current active seasonId
      */
-    function newSeason(LevelInfo[] calldata levelInfo) external onlyOwner returns (uint256) {
+    function newSeason(LevelInfo[] calldata levelInfo) external onlyOwner {
         seasonId++;
-        uint256 lastLevel = levelInfo.length - 1;
-        if (levelInfo[lastLevel].xpToCompleteLevel != 0) {
+        if (levelInfo[levelInfo.length - 1].xpToCompleteLevel != 0) {
             revert IncorrectSeasonDetails();
         }
-        for (uint256 x; x <= lastLevel; x++) {
-            seasonInfo[seasonId][x].xpToCompleteLevel = levelInfo[x].xpToCompleteLevel;
-            if (levelInfo[x].freeRewardId != 0) {
-                addReward(seasonId, x, false, levelInfo[x].freeRewardId, levelInfo[x].freeRewardQty);
-            }
-            if (levelInfo[x].premiumRewardId != 0) {
-                addReward(seasonId, x, true, levelInfo[x].premiumRewardId, levelInfo[x].premiumRewardQty);
+        for (uint256 i; i < levelInfo.length; i++) {
+            seasonInfo[seasonId][i].xpToCompleteLevel = levelInfo[i].xpToCompleteLevel;
+            if (levelInfo[i].freeRewardId != 0 && levelInfo[i].freeRewardId != 0) {
+                seasonInfo[seasonId][i] = levelInfo[i];
             }
         }
-
-        return seasonId;
     }
 
-    /// @notice sets required xp to levelup
-    /// @param _seasonId seasonId for which to change xp
-    /// @param _level level at which to change xp
-    /// @param xp new xp required to levelup
-    function setXp(uint256 _seasonId, uint256 _level, uint256 xp) external onlyOwner {
-        seasonInfo[_seasonId][_level].xpToCompleteLevel = xp;
+    /// @notice sets the required xp to levelup for the current season
+    function setXp(uint256 _level, uint256 xp) external onlyOwner {
+        seasonInfo[seasonId][_level].xpToCompleteLevel = xp;
     }
 
-    /// @notice sets a reward for a seasonId and at level
-    /// @dev only owner can set rewards
-    /// @param _seasonId seasonId for which to change the reward
-    /// @param _level level at which to change the reward
-    /// @param _premium true when setting a premium reward
-    /// @param _id new reward id
-    /// @param _qty new reward qty
-    function addReward(uint256 _seasonId, uint256 _level, bool _premium, uint256 _id, uint256 _qty) public onlyOwner {
-        if (rewardInfo[_id].limit == 0) {
-            revert InvalidId(_id);
-        }
+    /// @notice sets a reward for the current seasonId
+    function addReward(uint256 _level, bool _premium, uint256 _id, uint256 _qty) public onlyOwner {
         if (_premium) {
-            seasonInfo[_seasonId][_level].premiumRewardId = _id;
-            seasonInfo[_seasonId][_level].premiumRewardQty = _qty;
+            seasonInfo[seasonId][_level].premiumRewardId = _id;
+            seasonInfo[seasonId][_level].premiumRewardQty = _qty;
         } else {
-            seasonInfo[_seasonId][_level].freeRewardId = _id;
-            seasonInfo[_seasonId][_level].freeRewardQty = _qty;
+            seasonInfo[seasonId][_level].freeRewardId = _id;
+            seasonInfo[seasonId][_level].freeRewardQty = _qty;
         }
     }
 
-    /// @notice gives xp to a user upon completion of quests
-    /// @dev only owner can give xp
-    /// @param _seasonId seasonId for which to give xp
-    /// @param _xp amount of xp to give
-    /// @param _user user to give xp to
-    function giveXp(uint256 _seasonId, uint256 _xp, address _user) external onlyOwner {
-        userInfo[_user][_seasonId].xp += _xp;
+    /// @notice gives xp to a user for the current season; use upon completion of quests
+    function giveXp(uint256 _xp, address _user) external onlyOwner {
+        userInfo[_user][seasonId].xp += _xp;
     }
 
     /*//////////////////////////////////////////////////////////////
                                 UTILS
     //////////////////////////////////////////////////////////////*/
 
-    /// @notice checks if a user has premium pass
-    /// @dev user is considered premium when:
-    ///     they own one premium pass or
-    ///     they have already claimed a premium reward
-    /// @param _user user address
-    /// @param _seasonId seasonId for which to check for premium pass
-    /// @return true when user has premium status
+    /**
+     * @notice checks if a user has premium pass
+     * @dev user is considered premium when:
+     *       they own one premium pass or
+     *       they have already claimed a premium reward
+     */
     function isUserPremium(address _user, uint256 _seasonId) public view returns (bool) {
         if (userInfo[_user][_seasonId].claimedPremiumPass || balanceOf[_user][_seasonId] >= 1) {
             return true;
@@ -304,11 +277,7 @@ contract BattlePass is Rewards {
         }
     }
 
-    /// @notice gets user level for a seasonId
-    /// @dev breaks at the last level, where xpToCompleteLevel is 0
-    /// @param _user user address for which to get level
-    /// @param _seasonId seasonId for which to get level
-    /// @return userLevel current user level
+    /// @notice gets user level
     function level(address _user, uint256 _seasonId) public view returns (uint256 userLevel) {
         uint256 maxLevelInSeason = getMaxLevel(_seasonId);
         uint256 userXp = userInfo[_user][_seasonId].xp;
@@ -322,8 +291,10 @@ contract BattlePass is Rewards {
         }
     }
 
-    /// @notice gets the max level for a seasonId
-    /// @dev max level is reached when xpToCompleteLevel == 0
+    /**
+     * @notice gets the max level for a seasonId
+     * @dev max level is reached when xpToCompleteLevel == 0
+     */
     function getMaxLevel(uint256 _seasonId) public view returns (uint256 maxLevel) {
         uint256 xpToCompleteLevel = seasonInfo[_seasonId][maxLevel].xpToCompleteLevel;
         while (xpToCompleteLevel != 0) {
@@ -332,40 +303,66 @@ contract BattlePass is Rewards {
         }
     }
 
-    /// @notice checks a user claim status on a reward for a seasonId and at level
-    /// @param _user user address for which to check
-    /// @param _seasonId seasonId for which to check
-    /// @param _level level at which to check
-    /// @param _premium true when checking for premium rewards
-    /// @return true when reward is claimed
+    /// @notice checks a user claim status for a reward
     function isRewardClaimed(address _user, uint256 _seasonId, uint256 _level, bool _premium) external view returns (bool) {
         return userInfo[_user][_seasonId].claimed[_level][_premium];
     }
 
     function createLootdrop(LootdropInfo calldata _lootdropInfo) external onlyOwner {
-        if (rewardInfo[_lootdropInfo.id].limit == 0) {
+        if (
+            _lootdropInfo.limit == 0 || _lootdropInfo.qty <= 0 || _lootdropInfo.threshold < 0
+                || _lootdropInfo.start >= _lootdropInfo.end
+        ) {
             revert InvalidId(_lootdropInfo.id);
         }
-        if (_lootdropInfo.qty < 0 || _lootdropInfo.threshold < 0) {
-            revert InvalidLootdrop();
-        }
         lootdropId++;
-        lootdropInfo[lootdropId++] = _lootdropInfo;
+        lootdropInfo[lootdropId] = _lootdropInfo;
+        lootdropInfo[lootdropId].count = 0;
     }
 
     function claimLootdrop() external {
         address user = _msgSender();
-        if (lootdropClaims[user] == lootdropId) {
+        if (lootdropInfo[lootdropId].start < block.number || lootdropInfo[lootdropId].end > block.number) {
+            revert LootdropInactive();
+        }
+        if (lootdropClaim[user] == lootdropId) {
             revert LootdropAlreadyClaimed();
         }
-        if (lootdropInfo[lootdropId].lootdropReq == LOOTDROP_REQUIREMENTS.REPUTATION) {
-            if (lootdropInfo[lootdropId].threshold < balanceOf[user][CREATOR_TOKEN]) {
-                revert LootdropRequirments();
-            } else if (lootdropInfo[lootdropId].threshold < userInfo[user][CREATOR_TOKEN].xp) {
-                revert LootdropRequirments();
-            }
+        if (lootdropInfo[lootdropId].limit == 0) {
+            revert LootdropLimit();
+        } else if (lootdropInfo[lootdropId].limit > 0) {
+            lootdropInfo[lootdropId].limit--;
         }
-        lootdropClaims[user] = lootdropId;
-        mint(user, lootdropInfo[lootdropId].id, lootdropInfo[lootdropId].qty);
+        if (
+            lootdropInfo[lootdropId].lootdropReq == LOOTDROP_REQUIREMENTS.REPUTATION
+                && lootdropInfo[lootdropId].threshold > balanceOf[user][REPUTATION_TOKEN]
+                || (
+                    lootdropInfo[lootdropId].lootdropReq == LOOTDROP_REQUIREMENTS.XP
+                        && lootdropInfo[lootdropId].threshold > userInfo[user][seasonId].xp
+                )
+        ) {
+            revert LootdropRequirments();
+        }
+        lootdropClaim[user] = lootdropId;
+        if (lootdropInfo[lootdropId].lootdropType == LOOTDROP_TYPE.GIVEAWAY) {
+            lootdropEntry[++lootdropInfo[lootdropId].count];
+        } else {
+            mint(user, lootdropInfo[lootdropId].id, lootdropInfo[lootdropId].qty);
+        }
+    }
+
+    function selectWinner() external onlyOwner {
+        if (lootdropInfo[lootdropId].lootdropType != LOOTDROP_TYPE.GIVEAWAY) {
+            revert InvalidLootdrop();
+        }
+        if (lootdropInfo[lootdropId].end < block.number) {
+            revert LootdropStillActive();
+        }
+        if (lootdropInfo[lootdropId].count == 0) {
+            revert InvalidLootdrop();
+        }
+        uint256 random = uint256(keccak256(abi.encodePacked(block.timestamp, blockhash(block.number), block.difficulty)))
+            % lootdropInfo[lootdropId].count;
+        mint(lootdropEntry[random + 1], lootdropInfo[lootdropId].id, lootdropInfo[lootdropId].qty);
     }
 }
