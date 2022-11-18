@@ -121,6 +121,8 @@ contract BattlePass is Rewards {
     /// @dev lootdropEntry -> user
     mapping(uint256 => address) public lootdropEntry;
 
+    event LootdropWinner(uint256 indexed _Id, address indexed _user);
+
     /// @dev crafting is allowed to mint burn tokens in battle pass
     constructor(uint256 _creatorId, address _crafting, address _owner) Rewards(_creatorId, _crafting, _owner) {}
 
@@ -364,5 +366,6 @@ contract BattlePass is Rewards {
         uint256 random = uint256(keccak256(abi.encodePacked(block.timestamp, blockhash(block.number), block.difficulty)))
             % lootdropInfo[lootdropId].count;
         mint(lootdropEntry[random + 1], lootdropInfo[lootdropId].id, lootdropInfo[lootdropId].qty);
+        emit LootdropWinner(lootdropInfo[lootdropId].id, lootdropEntry[random + 1]);
     }
 }
